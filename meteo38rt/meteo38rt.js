@@ -21,6 +21,7 @@ request = require('request')
 moment  = require('moment')
 mongo   = require('mongodb').MongoClient
 
+st_map = {}
 
 data_fields = ['t', 'h', 'p', 'q', 'w', 'g', 'b', 'wt', 'wl']
 
@@ -57,19 +58,19 @@ function format_data(t, data) {
     }
     var cycle = "", ext = null;
     if( ext = d.ext ) {
-        if(ext.cycle) { cycle = " `/"+ext.cycle+"/`"; }
+        if(ext.cycle) { cycle = ":"+ext.cycle; }
     };
-    res.push("*"+d.st+"*: "+par.join(" ")+cycle);
+    res.push("\n*"+(st_map[d.st] || d.st)+"*  `/"+d.st+cycle+"/`\n "+par.join(" "));
   }
   return t.format("= MMM D, HH:mm =")+"\n"+res.join("\n");
 }
 
-setTimeout( function() {
-  mongo.connect(mdb_url, function(err, db) {
-    if(err) {
-      return console.error(err);
-    }
+mongo.connect(mdb_url, function(err, db) {
+  if(err) {
+    return console.error(err);
+  }
 
+  setTimeout( function() {
     var t1 = moment().seconds(start_delay).milliseconds(0);
     var t0 = t1.clone().subtract(60, "seconds");
 
@@ -81,17 +82,20 @@ setTimeout( function() {
       find_fields
     ).limit(1000).toArray(function(err, res){
       db.close();
-      if(err) {
-        return console.error(err);
-      }
+      if(err) { return console.error(err); }
       var t = format_data(t1.seconds(0), res);
       if(t) {
         send_message(tlg_chat, t);
       }
     });
-  })
-}, start_delay*1000);
+  }, start_delay*1000);
 
-// db.dat.find({ts:{$gte:(new Date(new Date().getTime()-120000))},.sort({ts:1})
+  db.collection('st').find({},{_id:1,title:1}).toArray(
+    function(err,data){
+      if(err) { return console.error(err); }
+      data.forEach(function(st){ st_map[st._id] = st.title; })
+    }
+  );
+})
 
 //.
