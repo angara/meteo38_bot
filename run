@@ -19,10 +19,10 @@
 # systemctl enable www-bots
 # systemctl start  www-bots
 
-STDOUT="../log/skichat-out.log"
-STDERR="../log/skichat-err.log"
+STDOUT="../log/bots-out.log"
+STDERR="../log/bots-err.log"
 
-exec java -jar skichat.jar ../conf/skichat.edn >> $STDOUT 2>>$STDERR &
+exec java -jar bots.jar ../conf/bots.edn >> $STDOUT 2>>$STDERR &
 
 PID=$!
 echo $PID > .pid

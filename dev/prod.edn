@@ -10,7 +10,7 @@
   :bots {
     ;; angarabot
     :angarabot {
-
+      :apikey "178997269:AAHFnR0rEmv8VIyLh50GEtySASgt2JyzdfY"
     }
 
     ;; SkiChatBot

@@ -1,7 +1,7 @@
 
 (ns skichat.process
   (:require
-    [clojure.core.async :refer [<!! chan thread close!]]
+    [clojure.core.async :refer [<!! chan close!]]
     [taoensso.timbre :refer [debug info warn]]
     [mount.core :refer [defstate]]
     [mlib.conf :refer [conf]]
@@ -28,10 +28,11 @@
 ;
 
 (defn msg-log [msg]
-  (prn "msg:" msg))
+  (debug "msg:" msg))
 ;
 
 (defn cmd-loop [msg-chan]
+  (debug "cmd-loop started.")
   (loop []
     (when-let [msg (<!! msg-chan)]
       (try
@@ -48,7 +49,7 @@
 
 (defstate process
   :start
-    (thread (cmd-loop (:msg-chan poller)))
+    (-> #(cmd-loop (:msg-chan poller)) Thread. .start)
   :stop
     (close! (:msg-chan poller)))
 ;

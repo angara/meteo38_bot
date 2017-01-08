@@ -8,11 +8,15 @@
   }
 
   :bots {
-    ;; angarabot
     :angarabot {
+      ;; angarabot
+      ;; :apikey "178997269:AAHFnR0rEmv8VIyLh50GEtySASgt2JyzdfY"
 
+      ;; angara_bot - dev
+      :apikey "174879986:AAHwiXbfHTRrVwczWPRNW1xtxeJjVSbnEeA"
     }
-    
+
+
     ;; SkiChatBot
     :skichat {
       :apikey "161285665:AAGGMNIHjxYooJXUR6xTDraxM9hGXTVaj1w"

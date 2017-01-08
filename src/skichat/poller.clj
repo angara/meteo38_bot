@@ -1,7 +1,7 @@
 
 (ns skichat.poller
   (:require
-    [clojure.core.async :refer [>!! chan thread]]
+    [clojure.core.async :refer [>!! chan]]
     [taoensso.timbre :refer [debug info warn]]
     [mount.core :refer [defstate]]
     [mlib.conf :refer [conf]]
@@ -19,7 +19,7 @@
         poll-timeout (:poll-timeout cnf 1)]
     ;
     (reset! run-flag true)
-    (debug "update-loop started")
+    (debug "update-loop started.")
     ;
     (loop [last-id 0  updates nil]
       (if @run-flag
@@ -41,7 +41,7 @@
               (Thread/sleep api-error-sleep))
             (recur last-id upd)))
         ;;
-        (debug "update-loop stop")))))
+        (debug "update-loop stopped.")))))
 ;
 
 (defstate poller
@@ -55,7 +55,7 @@
           msg-chan
         :res
           (if (-> cnf :apikey not-empty)
-            (thread (update-loop run-flag cnf msg-chan))
+            (-> #(update-loop run-flag cnf msg-chan) Thread. .start)
             (warn "skichat bot disabled in config."))})
   :stop
     (reset! (:run-flag poller) false))

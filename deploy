@@ -1,8 +1,8 @@
 #!/bin/bash
 
-PROD_HOST="ex1"
+PROD_HOST="www@ex1"
 PROD_PATH="/www/bots"
-PROD_CONF=${PROD_PATH}"../conf/bots.edn"
+PROD_CONF=${PROD_PATH}"/../conf/bots.edn"
 
 # PROD_VAR="/www/main/var"
 
@@ -13,7 +13,7 @@ scp run stop ${PROD_HOST}:${PROD_PATH}
 
 chmod g+r $JAR
 scp $JAR ${PROD_HOST}:${PROD_PATH}
-scp dev/prod.edn ${PROD_HOST}:${PROD_CONF}
+# scp dev/prod.edn ${PROD_HOST}:${PROD_CONF}
 
 ssh $PROD_HOST $PROD_PATH/stop
 
