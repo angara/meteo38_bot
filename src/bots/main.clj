@@ -5,7 +5,7 @@
     [clojure.edn :as edn]
     [taoensso.timbre :refer [error info]]
     [mount.core :refer [start with-args]]
-    [skichat.poller]
+    [angara.process]
     [skichat.process]))
 ;
 

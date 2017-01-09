@@ -1,30 +1,33 @@
 
-(ns skichat.process
+(ns angara.process
   (:require
     [clojure.core.async :refer [<!! chan close!]]
     [taoensso.timbre :refer [debug info warn]]
     [mount.core :refer [defstate]]
     [mlib.conf :refer [conf]]
     [mlib.tlg.core :as tg]
-    [mlib.tlg.poller :as tgp]
+    [mlib.tlg.poller :as tgp]))
     ;
-    [skichat.weather.darksky :refer [get-forecast forecast-text]]))
+  ;  [skichat.weather.darksky :refer [get-forecast forecast-text]]))
 ;
 
+;
+; (defn forecast [msg match]
+;   (let [token (-> conf :bots :skichat :apikey)
+;         cid (-> msg :chat :id)
+;         place (last match)
+;         latlng [51.39,104.85]
+;         txt (forecast-text "Мамай" latlng 3)]
+;     (tg/send-md token cid txt)))
+; ;
 
-(defn forecast [msg match]
-  (let [token (-> conf :bots :skichat :apikey)
-        cid (-> msg :chat :id)
-        place (last match)
-        latlng [51.39,104.85]
-        txt (forecast-text "Мамай" latlng 3)]
-    (tg/send-md token cid txt)))
+(defn on-msg [msg match])
 ;
 
 (defn on-message [msg]
   (when-let [text (-> msg :text not-empty)]
     (condp re-matches text
-      #"(?ui)\?\s{0,3}(прогн)(оз)?(\s+(.*))?" :>> #(forecast msg %)
+      #"(?ui)\?\s{0,3}(прогн)(оз)?(\s+(.*))?" :>> #(on-msg msg %)
       nil)))
 ;
 
@@ -51,7 +54,7 @@
 
 (defstate poller
   :start
-    (tgp/start (-> conf :bots :skichat))
+    (tgp/start (-> conf :bots :angarabot))
   :stop
     (tgp/stop poller))
 ;

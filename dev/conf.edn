@@ -14,15 +14,14 @@
 
       ;; angara_bot - dev
       :apikey "174879986:AAHwiXbfHTRrVwczWPRNW1xtxeJjVSbnEeA"
+      :name "angara_bot"
     }
 
 
     ;; SkiChatBot
     :skichat {
-      :apikey "161285665:AAGGMNIHjxYooJXUR6xTDraxM9hGXTVaj1w"
-      :sender-sleep 5000
-      :poll-limit 100
-      :poll-timeout 3     ;; must be less than socket-timeout!
+      ;; :apikey "161285665:AAGGMNIHjxYooJXUR6xTDraxM9hGXTVaj1w"
+      :apikey ""  ;; disabled in development
     }
   }
 

@@ -1,2 +1,5 @@
 
-# Angara.Net: SkiChat app
+# Angara.Net: bots
+
+* angarabot
+* skichatbot

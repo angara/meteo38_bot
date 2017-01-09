@@ -45,16 +45,19 @@
 
   :bots {
     :angarabot {
+      :name "angarabot"
       :apikey ""          ;; disabled when ampty
       :sender-sleep 5000
       :poll-limit 100
       :poll-timeout 3     ;; must be less than socket-timeout!
     }
     :skichat {
-      :apikey ""          ;; disabled when ampty
+      :name "skichat"
+      :apikey ""          ;; bot start disabled when ampty
       :sender-sleep 5000
       :poll-limit 100
-      :poll-timeout 3     ;; must be less than socket-timeout!
+      :poll-timeout 3
+      :api-error-sleep 3000
     }
   }
 

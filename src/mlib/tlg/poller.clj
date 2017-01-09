@@ -1,22 +1,18 @@
 
-(ns skichat.poller
+(ns mlib.tlg.poller
   (:require
     [clojure.core.async :refer [>!! chan]]
     [taoensso.timbre :refer [debug info warn]]
-    [mount.core :refer [defstate]]
-    [mlib.conf :refer [conf]]
     [mlib.core :refer [to-int]]
-    [mlib.telegram :as tg]))
+    [mlib.tlg.core :refer [api]]))
 ;
-
-
-(def api-error-sleep 3000)
 
 
 (defn update-loop [run-flag cnf msg-chan]
   (let [token (:apikey cnf)
         poll-limit (:poll-limit cnf 100)
-        poll-timeout (:poll-timeout cnf 1)]
+        poll-timeout (:poll-timeout cnf 1)
+        api-error-sleep (:api-error-sleep cnf 3000)]
     ;
     (reset! run-flag true)
     (debug "update-loop started.")
@@ -32,7 +28,7 @@
               (debug "update-dupe:" id))
             (recur id (next updates)))
           ;
-          (let [upd (tg/api token :getUpdates
+          (let [upd (api token :getUpdates
                       { :offset (inc last-id)
                         :limit poll-limit
                         :timeout poll-timeout})]
@@ -44,22 +40,30 @@
         (debug "update-loop stopped.")))))
 ;
 
-(defstate poller
-  :start
-    (let [cnf (-> conf :bots :skichat)
-          run-flag (atom nil)
-          msg-chan (chan)]
-      { :run-flag
-          run-flag
-        :msg-chan
-          msg-chan
-        :res
-          (if (-> cnf :apikey not-empty)
-            (-> #(update-loop run-flag cnf msg-chan) Thread. .start)
-            (warn "skichat bot disabled in config."))})
-  :stop
-    (reset! (:run-flag poller) false))
+
+(defn start [bot-conf & [out-chan]]
+  (let [out-chan (or out-chan (chan))
+        run-flag (atom nil)
+        bot-name (:name bot-conf)]
+    (if (-> bot-conf :apikey not-empty)
+      { :thread
+          (-> #(update-loop run-flag bot-conf out-chan) Thread. .start)
+        :run-flag run-flag
+        :chan out-chan
+        :name bot-name}
+      ;
+      (warn "bot start disabled in config:" bot-name))))
 ;
+
+(defn stop [poller]
+  (debug "stopping poller:" (:name poller))
+  (reset! (:run-flag poller) false))
+;
+
+(defn get-chan [poller]
+  (:chan poller))
+;
+
 
 
 ;;.
