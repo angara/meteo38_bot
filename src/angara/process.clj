@@ -6,7 +6,8 @@
     [mount.core :refer [defstate]]
     [mlib.conf :refer [conf]]
     [mlib.tlg.core :as tg]
-    [mlib.tlg.poller :as tgp]))
+    [mlib.tlg.poller :as tgp]
+    [angara.db :refer [insert-loc]]))
     ;
   ;  [skichat.weather.darksky :refer [get-forecast forecast-text]]))
 ;
@@ -25,14 +26,18 @@
 ;
 
 (defn on-message [msg]
-  (when-let [text (-> msg :text not-empty)]
-    (condp re-matches text
-      #"(?ui)\?\s{0,3}(прогн)(оз)?(\s+(.*))?" :>> #(on-msg msg %)
-      nil)))
+  (condp #(%1 %2) msg
+    :location :>> #(insert-loc (:chat msg) (:from msg) %)
+    (debug "on-message:" msg)))
+
+  ; (when-let [text (-> msg :text not-empty)]
+  ;   (condp re-matches text
+  ;     #"(?ui)\?\s{0,3}(прогн)(оз)?(\s+(.*))?" :>> #(on-msg msg %)
+  ;     nil)))
 ;
 
 (defn msg-log [msg]
-  (debug "msg:" msg))
+  (debug "msg-log:" msg))
 ;
 
 (defn cmd-loop [msg-chan]
