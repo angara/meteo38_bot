@@ -7,27 +7,14 @@
     [mlib.conf :refer [conf]]
     [mlib.tlg.core :as tg]
     [mlib.tlg.poller :as tgp]
-    [angara.db :refer [insert-loc]]))
-    ;
-  ;  [skichat.weather.darksky :refer [get-forecast forecast-text]]))
-;
-
-;
-; (defn forecast [msg match]
-;   (let [token (-> conf :bots :skichat :apikey)
-;         cid (-> msg :chat :id)
-;         place (last match)
-;         latlng [51.39,104.85]
-;         txt (forecast-text "Мамай" latlng 3)]
-;     (tg/send-md token cid txt)))
-; ;
-
-(defn on-msg [msg match])
+    [angara.location :refer [handle-location]]
+    [angara.photo :refer [handle-photo]]))
 ;
 
 (defn on-message [msg]
   (condp #(%1 %2) msg
-    :location :>> #(insert-loc (:chat msg) (:from msg) %)
+    :location :>> #(handle-location msg %)
+    :photo    :>> #(handle-photo msg %)
     (debug "on-message:" msg)))
 
   ; (when-let [text (-> msg :text not-empty)]
@@ -42,18 +29,20 @@
 
 (defn cmd-loop [msg-chan]
   (debug "cmd-loop started.")
-  (loop []
-    (when-let [msg (<!! msg-chan)]
-      (try
-        (msg-log msg)
-        (condp #(%1 %2) msg
-          :message :>> on-message
-;          :callback_query :>> on-callback
-          (debug "unexpected:" msg))
-        (catch Exception e
-          (warn "dispatch:" msg e)))
-      (recur)))
-  (debug "cmd-loop stopped."))
+  (let [apikey (-> conf :bots :angarabot :apikey)]
+    (loop []
+      (when-let [msg (<!! msg-chan)]
+        (try
+          (msg-log msg)
+          (condp #(%1 %2) msg
+            :message :>>
+              #(on-message (assoc % :apikey apikey))
+  ;          :callback_query :>> on-callback
+            (debug "unexpected:" msg))
+          (catch Exception e
+            (warn "dispatch:" msg e)))
+        (recur)))
+    (debug "cmd-loop stopped.")))
 ;
 
 
@@ -61,7 +50,8 @@
   :start
     (tgp/start (-> conf :bots :angarabot))
   :stop
-    (tgp/stop poller))
+    (when poller
+      (tgp/stop poller)))
 ;
 
 (defstate process

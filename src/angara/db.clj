@@ -23,6 +23,11 @@
     :ll   [:lng :lat]])
 ;
 
+(def PHOTOS "abot_photos")
+(comment
+  "fields"
+  [ :_id "oid"])
+
 (defn insert-loc [chat from {lat :latitude lng :longitude}]
   (if (and lat lng)
     (try
