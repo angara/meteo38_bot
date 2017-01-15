@@ -134,6 +134,14 @@
     (.substring (Integer/toString (+ 0x100 (bit-and 0xff b)) 16) 1))
 ;
 
+(defn byte-array-hash
+  "calculate hash of byte array"
+  [hash-name array]
+  (let [md (MessageDigest/getInstance hash-name)]
+    (.update md array)
+    (.digest md)))
+;
+
 (defn calc-hash
   "calculate hash byte array of utf string using hash-function"
   [hash-name s]

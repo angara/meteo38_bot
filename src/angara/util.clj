@@ -8,4 +8,8 @@
   [(-> msg :apikey) (-> msg :chat :id)])
 ;
 
+(defn from-name [from]
+  (when-let [username (:username from)]
+    (str "@" username)
+    (str (:first_name from) " " (:last_name from))))
 ;;.

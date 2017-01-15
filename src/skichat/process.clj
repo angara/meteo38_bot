@@ -53,7 +53,8 @@
   :start
     (tgp/start (-> conf :bots :skichat))
   :stop
-    (tgp/stop poller))
+    (when poller
+      (tgp/stop poller)))
 ;
 
 (defstate process

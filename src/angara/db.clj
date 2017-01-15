@@ -26,7 +26,12 @@
 (def PHOTOS "abot_photos")
 (comment
   "fields"
-  [ :_id "oid"])
+  [ :_id "sha(pict)"]
+  [ :sizes
+    [
+      ["suffix" "width" "height"]
+      ["suffix" "width" "height"]]])
+;
 
 (defn insert-loc [chat from {lat :latitude lng :longitude}]
   (if (and lat lng)
@@ -42,6 +47,7 @@
     (mc/ensure-index (dbc) LOC (array-map :ts -1))
     (mc/ensure-index (dbc) LOC (array-map "from.id" 1))
     (mc/ensure-index (dbc) LOC (array-map "chat.id" 1))
+    (mc/ensure-index (dbc) LOC (array-map "chat.id" 1 "from.id" 1 :ts -1))
     (mc/ensure-index (dbc) LOC (array-map :ll "2dsphere"))
     true
     (catch Exception e
