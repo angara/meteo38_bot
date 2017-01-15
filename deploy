@@ -4,11 +4,12 @@ PROD_HOST="www@ex1"
 PROD_PATH="/www/bots"
 PROD_CONF=${PROD_PATH}"/../conf/bots.edn"
 
-# PROD_VAR="/www/main/var"
+PROD_VAR="/www/bots/var"
 
 JAR="tmp/target/bots.jar"
 
-#ssh $PROD_HOST mkdir -p ${PROD_VAR}
+ssh $PROD_HOST mkdir -p ${PROD_VAR}/photos
+
 scp run stop ${PROD_HOST}:${PROD_PATH}
 
 chmod g+r $JAR

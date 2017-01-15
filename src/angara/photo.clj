@@ -2,9 +2,11 @@
 (ns angara.photo
   (:require
     [taoensso.timbre :refer [debug info warn]]
+    [clj-time.core :as tc]
     [mlib.conf :refer [conf]]
     [mlib.core :refer [to-int byte-array-hash]]
     [mlib.tlg.core :refer [send-text get-file]]
+    [angara.db :refer [last-loc]]
     [angara.util :refer [chat-creds]]))
 ;
 
@@ -20,6 +22,8 @@
   (mlib.tlg.core/file-path apikey file-id))
 ;
 
+
+(def FRESH_LOC (tc/minutes 30))
 
 (defn save-photo-thumbs [file]
   (let [hash (byte-array-hash "sha1" file)]))
@@ -40,17 +44,23 @@
       (warn "insert-photo-rec:" msg e))))
 ;
 
+
+(defn big-photo-id [pho]
+  (let [w+h (fn [p]
+              (+ (-> p :with (to-int 0)) (-> p :height (to-int 0))))]
+    (:file_id (first (sort-by w+h > photo)))))
+;
+
 (defn handle-photo [msg photo]
   (let [[apikey cid] (chat-creds msg)
-        w+h (fn [p] (+
-                      (-> p :with (to-int 0))
-                      (-> p :height (to-int 0))))
-        orig (first (sort-by w+h > photo))]
-    (if-let [file (get-file apikey (:file_id orig))]
-      (send-text apikey cid
-        (str "orig:" orig " " (count file)))
-      ;
-      (warn "handle-photo - unable to get photo:" msg))))
+        uid (-> msg :from :id)
+        orig-id (big-photo-id photo)]
+    (when-let [loc (last-loc cid uid (tc/minus (tc/now) FRESH_LOC))]
+      (if-let [file (get-file apikey orig-id)]
+        (send-text apikey cid
+          (str "orig:" orig " " (count file)))
+        ;
+        (warn "handle-photo - unable to get photo:" msg)))))
 ;
 
 ;;.

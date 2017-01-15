@@ -6,6 +6,7 @@
     [clj-time.core :as tc]
     [mount.core :refer [defstate]]
     [monger.collection :as mc]
+    [monger.query :as mq]
 
     [mlib.conf :refer [conf]]
     [mlib.mdb.conn :refer [dbc]]))
@@ -18,8 +19,8 @@
   "fields"
   [ :_id "oid"
     :ts  "now"
-    :from [:id :username :first_name :last_name]
     :chat [:id :title]
+    :user [:id :username :first_name :last_name]
     :ll   [:lng :lat]])
 ;
 
@@ -33,21 +34,33 @@
       ["suffix" "width" "height"]]])
 ;
 
-(defn insert-loc [chat from {lat :latitude lng :longitude}]
+(defn insert-loc [chat user {lat :latitude lng :longitude}]
   (if (and lat lng)
     (try
-      (mc/insert (dbc) LOC {:ts (tc/now) :chat chat :from from :ll [lng lat]})
+      (mc/insert (dbc) LOC
+        {:ts (tc/now) :chat chat :user user :ll [lng lat]})
       (catch Exception e
         (warn "insert-loc:" e)))
     (warn "insert-loc: no location specified!")))
 ;
 
+(defn last-loc [cid uid fresh-ts]
+  (try
+    (first
+      (mq/with-collection (dbc) LOC
+        (mq/find {"chat.id" cid "user.id" uid :ts {:$gte fresh-ts}})
+        (mq/sort {"ts" -1})
+        (mq/limit 1)))
+    (catch Exception e
+      (warn "last-loc:" cid uid e))))
+;
+
 (defn indexes []
   (try
     (mc/ensure-index (dbc) LOC (array-map :ts -1))
-    (mc/ensure-index (dbc) LOC (array-map "from.id" 1))
+    (mc/ensure-index (dbc) LOC (array-map "user.id" 1))
     (mc/ensure-index (dbc) LOC (array-map "chat.id" 1))
-    (mc/ensure-index (dbc) LOC (array-map "chat.id" 1 "from.id" 1 :ts -1))
+    (mc/ensure-index (dbc) LOC (array-map "chat.id" 1 "user.id" 1 :ts -1))
     (mc/ensure-index (dbc) LOC (array-map :ll "2dsphere"))
     true
     (catch Exception e
