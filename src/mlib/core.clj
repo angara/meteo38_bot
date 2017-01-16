@@ -136,9 +136,9 @@
 
 (defn byte-array-hash
   "calculate hash of byte array"
-  [hash-name array]
+  [hash-name barray]
   (let [md (MessageDigest/getInstance hash-name)]
-    (.update md array)
+    (.update md barray)
     (.digest md)))
 ;
 

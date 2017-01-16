@@ -27,11 +27,17 @@
 (def PHOTOS "abot_photos")
 (comment
   "fields"
-  [ :_id "sha(pict)"]
-  [ :sizes
-    [
-      ["suffix" "width" "height"]
-      ["suffix" "width" "height"]]])
+  [ :_id "oid"
+    :hash "sha(pict)"
+    :ts "now"
+    :user {}
+    :chat {}
+    :caption ""
+    :ll ["lng" "lat"]])
+    ; :sizes
+    ; [
+    ;   ["suffix" "width" "height"]
+    ;   ["suffix" "width" "height"]]])
 ;
 
 (defn insert-loc [chat user {lat :latitude lng :longitude}]

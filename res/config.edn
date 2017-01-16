@@ -43,6 +43,11 @@
     :ms 1000
   }
 
+  :photo {
+    :convert-bin "/usr/bin/convert"
+
+  }
+
   :bots {
     :angarabot {
       :name "angarabot"
@@ -50,6 +55,9 @@
       :sender-sleep 5000
       :poll-limit 100
       :poll-timeout 3     ;; must be less than socket-timeout!
+
+      :photo-dir "var/photos"
+      :photo-url "..."
     }
     :skichat {
       :name "skichat"
