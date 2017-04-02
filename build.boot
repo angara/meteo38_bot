@@ -2,7 +2,7 @@
 ;;  Angara.Net bots
 ;;
 
-(def project {:name "angara.net/bots" :version "0.4.0"})
+(def project {:name "angara.net/bots" :version "0.5.0"})
 
 (def jar-main 'bots.main)
 (def jar-file "bots.jar")
@@ -19,7 +19,6 @@
     [org.clojure/core.async "0.2.395"]
     [org.clojure/core.cache "0.6.5"]
 
-    [com.taoensso/timbre "4.8.0"]   ; https://github.com/ptaoussanis/timbre
     [org.clojure/tools.logging "0.3.1"]
     [ch.qos.logback/logback-classic "1.1.8"]
 
@@ -34,13 +33,13 @@
     [cheshire "5.7.0"]
     [compojure "1.5.2"]
 
-    [rum "0.10.7"]
-    [garden "1.3.2"]
+    ; [rum "0.10.7"]
+    ; [garden "1.3.2"]
     [mount "0.1.11"]
 
     [com.novemberain/monger "3.1.0"]
 
-    ; [org.postgresql/postgresql "9.4.1212"]
+    ; [org.postgresql/postgresql "42.0.0"]
 
     ;; https://funcool.github.io/clojure.jdbc/latest/
     ; [funcool/clojure.jdbc "0.9.0"]
@@ -55,29 +54,41 @@
     [org.martinklepsch/boot-garden "1.3.2-0" :scope "test"]
     [org.clojure/tools.namespace "0.2.11" :scope "test"]
     [proto-repl "0.3.1" :scope "test"]])
-
-    ;; [enlive "1.1.5"]     ;; https://github.com/cgrand/enlive
-
 ;
 
 (require
-  '[clojure.tools.namespace.repl :refer [set-refresh-dirs]]
+  '[clojure.tools.namespace.repl :refer [set-refresh-dirs refresh]]
   '[clojure.edn :as edn]
   '[clj-time.core :as tc]
-  '[boot.git :refer [last-commit]]
-  '[org.martinklepsch.boot-garden :refer [garden]])
+  '[mount.core :as mount]
+  '[boot.git :refer [last-commit]])
+;  '[org.martinklepsch.boot-garden :refer [garden]])
 ;
 
-(task-options!
-  aot {:all true}
-  garden {
-          :styles-var 'css.styles/main
-          :output-to  "public/incs/css/main.css"
-          :pretty-print false}
-  repl {
-        :init-ns 'user})
-        ; :skip-init true})
+(task-options!)
+  ; garden {
+  ;         :styles-var 'css.styles/main
+  ;         :output-to  "public/incs/css/main.css"
+  ;         :pretty-print false}
 ;
+
+;;; ;;; ;;; ;;;
+
+(defn start []
+  (require jar-main)
+  (-> "conf/dev.edn"
+    (slurp)
+    (edn/read-string)
+    (mount/start-with-args)))
+;
+
+(defn go []
+  (mount/stop)
+  (apply set-refresh-dirs (get-env :source-paths))
+  (refresh :after 'boot.user/start))
+;
+
+;;; ;;; ;;; ;;;
 
 (defn increment-build []
   (let [bf "res/build.edn"
@@ -101,8 +112,15 @@
 ;
 
 (deftask dev []
-  (set-env! :source-paths #(conj % "dev" "test"))
+  (set-env! :source-paths #(conj % "test"))
   (apply set-refresh-dirs (get-env :source-paths))
+  ;;
+  (create-ns 'user)
+  (intern 'user 'reset
+    (fn []
+      (prn "(user/reset)")
+      ((resolve 'boot.user/go))))
+  ;;
   identity)
 ;
 
@@ -111,7 +129,7 @@
   (comp
     ;; (javac)
     ;; (garden)
-    (aot)
+    (aot :all true)
     (uber)
     (jar :main jar-main :file jar-file)
     (target :dir #{"tmp/target"})))

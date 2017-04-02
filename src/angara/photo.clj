@@ -3,13 +3,15 @@
   (:require
     [clojure.java.io :as io]
     [clojure.java.shell :refer [sh]]
-    [taoensso.timbre :refer [debug info warn]]
     [clj-time.core :as tc]
     [monger.collection :as mc]
+    ;
+    [mlib.log :refer [debug info warn]]
     [mlib.conf :refer [conf]]
     [mlib.core :refer [to-int byte-array-hash hexbyte]]
-    [mlib.mdb.conn :refer [dbc]]
     [mlib.tlg.core :refer [send-message send-text get-file]]
+    ;
+    [bots.db :refer [dbc]]
     [angara.db :refer [last-loc PHOTOS]]
     [angara.util :refer [chat-creds]]))
 ;
@@ -53,7 +55,6 @@
   (prn "save:" fname)
   (io/make-parents fname)
   (io/copy bytes (io/file fname))
-  ;; TODO: extract exif
   fname)
 ;
 
@@ -108,7 +109,8 @@
       (if-let [bytes (get-file apikey orig-id)]
         (if-let [res (process-photo bytes msg loc)]
           (send-message apikey cid
-            { :text (str "Фото привязано к координате: " (:ll res))
+            { :text (str "Фото привязано к координате - ["
+                      (-> res :ll second) "," (-> res :ll first) "]")
               :reply_to_message_id (::message_id msg)})
           ;
           (warn "handle-photo - save failed"))

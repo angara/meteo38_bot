@@ -5,7 +5,7 @@
     [clj-time.core :as tc]
     [clj-time.coerce :refer [from-long]]
     [clj-http.client :as http]
-    [taoensso.timbre :refer [warn]]
+    [mlib.log :refer [warn]]
     [mlib.conf :refer [conf]]
     [mlib.core :refer [to-int]]
     [skichat.weather.fmt :as fmt]))

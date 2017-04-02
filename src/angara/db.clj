@@ -2,16 +2,15 @@
 (ns angara.db
   (:require
     [clojure.core.async :refer [<!! chan close!]]
-    [taoensso.timbre :refer [debug info warn]]
     [clj-time.core :as tc]
     [mount.core :refer [defstate]]
     [monger.collection :as mc]
     [monger.query :as mq]
-
+    ;
+    [mlib.log :refer [debug info warn]]
     [mlib.conf :refer [conf]]
-    [mlib.mdb.conn :refer [dbc]]))
-    ; [mlib.tlg.core :as tg]
-    ; [mlib.tlg.poller :as tgp]))
+    ;
+    [bots.db :refer [dbc]]))
 ;
 
 (def LOC "abot_loc")
@@ -68,6 +67,12 @@
     (mc/ensure-index (dbc) LOC (array-map "chat.id" 1))
     (mc/ensure-index (dbc) LOC (array-map "chat.id" 1 "user.id" 1 :ts -1))
     (mc/ensure-index (dbc) LOC (array-map :ll "2dsphere"))
+    ;
+    (mc/ensure-index (dbc) PHOTOS (array-map :ts -1))
+    (mc/ensure-index (dbc) PHOTOS (array-map "user.id" 1))
+    (mc/ensure-index (dbc) PHOTOS (array-map "chat.id" 1))
+    (mc/ensure-index (dbc) PHOTOS (array-map "chat.id" 1 "user.id" 1 :ts -1))
+    (mc/ensure-index (dbc) PHOTOS (array-map :ll "2dsphere"))
     true
     (catch Exception e
       (warn "abot indexes:" e))))

@@ -1,0 +1,24 @@
+#
+#	generic .gitignore
+#
+
+/conf/
+/tmp/
+/var/
+
+.*
+
+*~
+*.class
+*.ser
+*.bak
+*.old
+*.pyc
+*.pyo
+*.log
+*.tmp
+*.swp
+
+!.gitignore
+
+#.

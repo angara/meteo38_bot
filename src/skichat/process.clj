@@ -2,8 +2,9 @@
 (ns skichat.process
   (:require
     [clojure.core.async :refer [<!! chan close!]]
-    [taoensso.timbre :refer [debug info warn]]
     [mount.core :refer [defstate]]
+    ;
+    [mlib.log :refer [debug info warn]]
     [mlib.conf :refer [conf]]
     [mlib.tlg.core :as tg]
     [mlib.tlg.poller :as tgp]

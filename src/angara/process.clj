@@ -2,9 +2,9 @@
 (ns angara.process
   (:require
     [clojure.core.async :refer [<!! chan close!]]
-    [taoensso.timbre :refer [debug info warn]]
     [mount.core :refer [defstate]]
     [mlib.conf :refer [conf]]
+    [mlib.log :refer [debug info warn]]
     [mlib.tlg.core :as tg]
     [mlib.tlg.poller :as tgp]
     [angara.location :refer [handle-location]]

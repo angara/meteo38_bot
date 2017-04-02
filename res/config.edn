@@ -59,6 +59,13 @@
       :photo-dir "var/photos"
       :photo-url "..."
     }
+    :meteo38bot {
+      :name "meteo38bot"
+      :apikey ""
+      :sender-sleep 5000
+      :poll-limit 100
+      :poll-timeout 3     ;; must be less than socket-timeout!
+    }
     :skichat {
       :name "skichat"
       :apikey ""          ;; bot start disabled when ampty
