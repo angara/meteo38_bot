@@ -52,7 +52,6 @@
 ;
 
 (defn save-orig [bytes fname]
-  (prn "save:" fname)
   (io/make-parents fname)
   (io/copy bytes (io/file fname))
   fname)

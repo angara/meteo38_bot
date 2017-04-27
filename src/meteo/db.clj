@@ -18,6 +18,20 @@
 (def ST "st")   ;; stations collection
 
 
+(def HOURS_COLL "hours")   ;; houlry aggregates
+(comment
+  { :_id  :oid
+    :hour "date rounded to hours"
+    :st   "station_id"
+    :t [:min :max :avg]
+    :p [:min :max :avg]
+    :h [:min :max :avg]
+    :w [:min :max :avg]
+    :b "int: 0-359, 360"
+    :wt :avg
+    :wl :avg})
+;
+
 ; (defn q-st-fresh []
 ;   { :pub 1
 ;     :ts {:$gte (tc/minus (tc/now) (tc/minutes 80))}})

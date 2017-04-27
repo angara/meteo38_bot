@@ -48,6 +48,10 @@
 
   }
 
+  :cron {
+    :meteo {:offset 120 :interval 1200}
+  }
+
   :bots {
     :angarabot {
       :name "angarabot"

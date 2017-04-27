@@ -10,11 +10,11 @@ JAR="tmp/target/bots.jar"
 
 ssh $PROD_HOST mkdir -p ${PROD_VAR}/photos
 
-scp run stop ${PROD_HOST}:${PROD_PATH}
+# scp run stop ${PROD_HOST}:${PROD_PATH}
 
 chmod g+r $JAR
 scp $JAR ${PROD_HOST}:${PROD_PATH}
-# scp dev/prod.edn ${PROD_HOST}:${PROD_CONF}
+# scp conf/prod.edn ${PROD_HOST}:${PROD_CONF}
 
 ssh $PROD_HOST $PROD_PATH/stop
 
