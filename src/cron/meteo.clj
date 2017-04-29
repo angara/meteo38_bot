@@ -5,15 +5,14 @@
     [clj-time.periodic :as tp]
     [chime :refer [chime-at]]
     [mount.core :refer [defstate]]
+    [monger.collection :as mc]
     ;
     [mlib.conf :refer [conf]]
     [mlib.log :refer [warn]]
     ;
-    [bots.db  :refer [mdb_meteo]]
-    [meteo.db :refer [HOURS_COLL]]))
+    [bots.db  :refer [db_meteo]]
+    [meteo.db :refer [DAT_COLL HOURS_COLL]]))
 ;
-
-
 
 
 (comment
@@ -27,6 +26,44 @@
     :b "int: 0-359, 360"
     :wt :avg
     :wl :avg})
+;
+
+(defn create-indexes [db]
+  (try
+    (mc/create-index db HOURS_COLL
+      (array-map :hour 1 :st 1) {:unique true})
+    (catch Exception e
+      (warn "create-indexes:" e))))
+;
+
+(defstate indexes
+  :start
+    (create-indexes (db_meteo)))
+;
+
+
+(defn interval-fetch [t0 t1]
+  (try
+    (mc/find-maps (db_meteo) DAT_COLL
+      {:ts {:$gte t0 :$lt t1}})
+    (catch Exception e
+      (warn "interval-fetch:" e))))
+;
+
+(defn prev-hour [time]
+  (let [t1 (t/floor time t/hour)
+        t0 (t/minus t1 (t/hours 1))]
+    [t0 t1]))
+;
+
+(defn aggregate [data]
+  (prn "h:" data))
+;
+
+#_(->>
+      (prev-hour (t/now))
+      (apply interval-fetch)
+      (aggregate))
 
 
 (defn worker [time]
@@ -46,6 +83,8 @@
   (when cancel
     (cancel)))
 ;
+
+
 
 (defstate cron
   :start

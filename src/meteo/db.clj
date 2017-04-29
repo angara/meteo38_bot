@@ -17,6 +17,8 @@
 
 (def ST "st")   ;; stations collection
 
+(def ST_COLL  "st")
+(def DAT_COLL "dat")
 
 (def HOURS_COLL "hours")   ;; houlry aggregates
 (comment
