@@ -56,15 +56,45 @@
     [t0 t1]))
 ;
 
-(defn aggregate [data]
-  (prn "h:" data))
+
+(defn init-mmac [val]
+  {:min val :max val :avs val :cnt 1})
 ;
 
-#_(->>
-      (prev-hour (t/now))
-      (apply interval-fetch)
-      (aggregate))
+(defn update-mmac [mmac val]
+  {
+    :min (min (:min mmac) val)
+    :max (max (:max mmac) val)
+    :avs (+   (:avs mmac) val)
+    :cnt (inc (:cnt mmac))})
+;
 
+(defn update-res! [res data-point]
+  (doseq [k [:t :p :h]]
+    (when-let [val (get data-point k)]
+      (assoc! res k
+        (if-let [mmac (get res k)]
+          (update-mmac mmac val)
+          (init-mmac val))))))
+;
+
+(defn aggregate [data]
+  (doseq [[st_id st_data] (group-by :st data)]
+    (prn "st_data:" st_id " - " (count st_data) "\n")
+    (let [res (transient {})]
+      (doseq [d st_data]
+        (update-res! res d)))))
+;
+
+
+(defn af []
+  (let [[t0 t1] (prev-hour (t/now))
+        data (interval-fetch t0 t1)]
+    (time
+      (aggregate data))))
+;
+
+#_(af)
 
 (defn worker [time]
   (prn "worker time:" time))
