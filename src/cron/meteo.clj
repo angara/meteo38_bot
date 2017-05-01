@@ -81,16 +81,22 @@
 ;
 
 (defn st-aggregate [st data]
-  (let [
-        t_mma (min-max-avg (keep :t data))
-        p_mma (min-max-avg (keep :p data))
-        h_mma (min-max-avg (keep :h data))]
-    (prn "--------")
-    (prn "st:" st)
-    (prn "t:" t_mma)
-    (prn "p:" p_mma)
-    (prn "h:" h_mma)))
+  (let [vv
+          (into {}
+            (for [k [:t :p :h :w :g :wt :wl]
+                  :let [mma (min-max-avg (keep k data))]
+                  :when mma]
+              [k mma]))
+        ;; add 360 to wind bearing
+        b (min-max-avg
+            (keep
+              #(when-let [b (:b %)] (+ b 360))
+              data))]
 
+    (prn "--------")
+    (prn "st:" st vv b)))
+
+    ;; b.avg - 360: when b.min - b.max < 180 && bmax != 720
 ;
 
 
