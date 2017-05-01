@@ -56,48 +56,63 @@
     [t0 t1]))
 ;
 
-
-(defn init-mmac [val]
-  {:min val :max val :avs val :cnt 1})
+(defn calc-avg [mmac]
+  (let [{avs :avs cnt :cnt} mmac]
+    (if cnt
+      (assoc
+        (dissoc mmac :avs :cnt)
+        :avg (/ (float avs) cnt))
+      ;;
+      mmac)))
 ;
 
-(defn update-mmac [mmac val]
-  {
-    :min (min (:min mmac) val)
-    :max (max (:max mmac) val)
-    :avs (+   (:avs mmac) val)
-    :cnt (inc (:cnt mmac))})
+(defn min-max-avg [data]
+  (when-let [v0 (first data)]
+    (->> (next data)
+      (reduce
+        (fn [mmac val]
+          (when val
+            { :min (min (:min mmac) val)
+              :max (max (:max mmac) val)
+              :avs (+   (:avs mmac) val)
+              :cnt (inc (:cnt mmac))}))
+        {:min v0 :max v0 :avs v0 :cnt 1})
+      (calc-avg))))
 ;
 
-(defn update-res! [res data-point]
-  (doseq [k [:t :p :h]]
-    (when-let [val (get data-point k)]
-      (assoc! res k
-        (if-let [mmac (get res k)]
-          (update-mmac mmac val)
-          (init-mmac val))))))
-;
+(defn st-aggregate [st data]
+  (let [
+        t_mma (min-max-avg (keep :t data))
+        p_mma (min-max-avg (keep :p data))
+        h_mma (min-max-avg (keep :h data))]
+    (prn "--------")
+    (prn "st:" st)
+    (prn "t:" t_mma)
+    (prn "p:" p_mma)
+    (prn "h:" h_mma)))
 
-(defn aggregate [data]
-  (doseq [[st_id st_data] (group-by :st data)]
-    (prn "st_data:" st_id " - " (count st_data) "\n")
-    (let [res (transient {})]
-      (doseq [d st_data]
-        (update-res! res d)))))
 ;
 
 
 (defn af []
   (let [[t0 t1] (prev-hour (t/now))
         data (interval-fetch t0 t1)]
-    (time
-      (aggregate data))))
+    data))
+    ; (time
+    ;   (aggregate data))))
 ;
 
-#_(af)
+#_(def data (af))
+
+;; (prn data)
+
+#_(doseq [[st st_vals] (group-by :st data)]
+    (st-aggregate st st_vals))
+
 
 (defn worker [time]
-  (prn "worker time:" time))
+  ; (prn "worker time:" time))
+  nil)
 ;
 
 (defn start [cnf]
