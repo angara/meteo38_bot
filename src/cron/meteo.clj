@@ -6,13 +6,18 @@
     [chime :refer [chime-at]]
     [mount.core :refer [defstate]]
     [monger.collection :as mc]
+    [monger.query :as mq]
     ;
     [mlib.conf :refer [conf]]
-    [mlib.log :refer [warn]]
+    [mlib.core :refer [to-int to-float]]
+    [mlib.log :refer [debug info warn error]]
     ;
     [bots.db  :refer [db_meteo]]
     [meteo.db :refer [DAT_COLL HOURS_COLL]]))
 ;
+
+
+(def ONE_HOUR (t/hours 1))
 
 
 (comment
@@ -50,10 +55,33 @@
       (warn "interval-fetch:" e))))
 ;
 
-(defn prev-hour [time]
-  (let [t1 (t/floor time t/hour)
-        t0 (t/minus t1 (t/hours 1))]
-    [t0 t1]))
+(defn get-last-hour []
+  (try
+    (->
+      (mq/with-collection (db_meteo) HOURS_COLL
+        (mq/find {})
+        (mq/fields [:hour])
+        (mq/sort {:hour -1})
+        (mq/limit 1))
+      (first)
+      (:hour))
+    (catch Exception e
+      (warn "get-last-hour:" e))))
+;
+
+(defn update-st-hour [st hour data]
+  (debug "st-hour:" st hour data)
+  (when data
+    (try
+      (->
+        (mc/update (db_meteo) HOURS_COLL
+          {:st st :hour hour}
+          (assoc data :st st :hour hour)
+          {:upsert true})
+        (.getN)
+        (= 1))
+      (catch Exception e
+        (warn "update-st-hour:" st hour data e)))))
 ;
 
 (defn calc-avg [mmac]
@@ -80,45 +108,76 @@
       (calc-avg))))
 ;
 
+(defn calc-w [ws gs]
+  (if-let [gm (:max gs)]
+    (if-let [wm (:max ws)]
+      (assoc ws :max (max wm gm))
+      (assoc ws :max gm))
+    ws))
+;
+
+(defn calc-b [bs]
+  (when (seq bs)
+    (let [low (apply min bs)
+          hi  (apply max bs)]
+      (when (< hi 360)
+        (if (>= 90 (- hi low))
+          (/ (+ hi low) 2)
+          (let [h2 (+ 360 low)]
+            (when (>= 90 (- h2 hi))
+              (rem (/ (+ h2 hi) 2) 360))))))))
+;
+
+(defn numf [key]
+  (fn [d]
+    (when-let [v (get d key)]
+      (or
+        (and (number? v) v)
+        (to-int v)
+        (to-float v)))))
+;
+
 (defn st-aggregate [st data]
-  (let [vv
-          (into {}
-            (for [k [:t :p :h :w :g :wt :wl]
-                  :let [mma (min-max-avg (keep k data))]
+  (try
+    (let [tph
+            (for [k [:t :p :h :wt :wl]
+                  :let [mma (min-max-avg (keep (numf k) data))]
                   :when mma]
-              [k mma]))
-        ;; add 360 to wind bearing
-        b (min-max-avg
-            (keep
-              #(when-let [b (:b %)] (+ b 360))
-              data))]
+              [k mma])
+          w (calc-w
+              (min-max-avg (keep (numf :w) data))
+              (min-max-avg (keep (numf :g) data)))
+          b (when-let
+              [b (calc-b (keep #(when-let [b (:b %)] b) data))]
+              {:avg b})]
+      (into {}
+        (filter second
+          (conj tph [:w w] [:b b]))))
+    (catch Exception e
+      (warn "st-aggregate:" st data e))))
+;
 
-    (prn "--------")
-    (prn "st:" st vv b)))
+;;; ;;; ;;; ;;; ;;;
 
-    ;; b.avg - 360: when b.min - b.max < 180 && bmax != 720
+(defn calc-hour [t0 t1]
+  (if-let [data (not-empty (interval-fetch t0 t1))]
+    (doseq [[st st_vals] (group-by :st data)]
+      (update-st-hour st t0
+        (st-aggregate st st_vals)))
+    ;;
+    (info "calc-hour: no data - " t0 t1)))
 ;
 
 
-(defn af []
-  (let [[t0 t1] (prev-hour (t/now))
-        data (interval-fetch t0 t1)]
-    data))
-    ; (time
-    ;   (aggregate data))))
-;
-
-#_(def data (af))
-
-;; (prn data)
-
-#_(doseq [[st st_vals] (group-by :st data)]
-    (st-aggregate st st_vals))
-
-
-(defn worker [time]
-  ; (prn "worker time:" time))
-  nil)
+(defn worker [this-hour]
+  (if-let [last-hour (get-last-hour)]
+    (loop [t0 (t/plus (t/floor last-hour t/hour) ONE_HOUR)]
+      (when (t/before? t0 this-hour)
+        (let [t1 (t/plus t0 ONE_HOUR)]
+          (calc-hour t0 t1)
+          (recur t1))))
+    ;;
+    (error "worker: unable to get last hour")))
 ;
 
 (defn start [cnf]
@@ -134,7 +193,6 @@
   (when cancel
     (cancel)))
 ;
-
 
 
 (defstate cron

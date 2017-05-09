@@ -1,6 +1,4 @@
 
-;; TODO: update library source
-
 (ns mlib.log
   (:require
     [clojure.tools.logging]))
@@ -32,6 +30,12 @@
       ~@args))
 ;
 
+(defmacro error [message & args]
+  `(clojure.tools.logging/logp :error
+      (str ~(source-line &form) ": " ~message)
+      ~@args))
+;
+
 (comment
   (debug "!debug!" 1 2 3)
   (info  "!info!" 1 2 3)
@@ -46,3 +50,6 @@
     (catch Exception e#
       (warn ~label e#))))
 ;
+
+;;.
+

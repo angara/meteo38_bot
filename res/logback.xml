@@ -8,8 +8,12 @@
     </encoder>
   </appender>
 
-  <logger name="mlib" level="DEBUG" />
-  <logger name="bots" level="DEBUG" />
+  <logger name="mlib"   level="DEBUG" />
+  
+  <logger name="angara" level="DEBUG" />
+  <logger name="bots"   level="DEBUG" />
+  <logger name="cron"   level="DEBUG" />
+  <logger name="meteo"  level="DEBUG" />
 
   <root level="INFO">
     <appender-ref ref="MAIN"/>

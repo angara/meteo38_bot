@@ -27,13 +27,13 @@
     [clj-http "3.5.0"]
     [jarohen/chime "0.2.1"]
 
-    [ring/ring-core "1.5.1"]
+    [ring/ring-core "1.6.0"]
     [ring/ring-json "0.4.0"]
-    [ring/ring-headers "0.2.0"]
-    [ring/ring-jetty-adapter "1.5.1"]
+    [ring/ring-headers "0.3.0"]
+    [ring/ring-jetty-adapter "1.6.0"]
 
     [cheshire "5.7.1"]
-    [compojure "1.5.2"]
+    [compojure "1.6.0"]
 
     ; [rum "0.10.7"]
     ; [garden "1.3.2"]
