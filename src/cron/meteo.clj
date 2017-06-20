@@ -176,12 +176,12 @@
 
 (defn worker [this-hour]
   (if-let [last-hour (get-last-hour)]
-    (loop [t0 (t/plus (t/floor last-hour t/hour) ONE_HOUR)]
+    (loop [t0 (t/floor last-hour t/hour)]
       (info "worker last-hour:" last-hour)
-      ;(when (t/before? t0 this-hour)
-      (let [t1 (t/plus t0 ONE_HOUR)]
-        (calc-hour t0 t1)
-        (recur t1)))
+      (when (t/before? t0 this-hour)
+        (let [t1 (t/plus t0 ONE_HOUR)]
+          (calc-hour t0 t1)
+          (recur t1))))
     ;;
     (error "worker: unable to get last hour")))
 ;
