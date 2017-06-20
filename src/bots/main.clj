@@ -6,6 +6,7 @@
     [mlib.log :refer [warn]]
     [angara.process]
     [meteo.core]
+    [cron.meteo]
     [skichat.process])
   (:gen-class))
 ;

@@ -122,10 +122,13 @@
           hi  (apply max bs)]
       (when (< hi 360)
         (if (>= 90 (- hi low))
-          (/ (+ hi low) 2)
+          (int
+            (/ (+ hi low) 2))
+          ;;
           (let [h2 (+ 360 low)]
             (when (>= 90 (- h2 hi))
-              (rem (/ (+ h2 hi) 2) 360))))))))
+              (int
+                (rem (/ (+ h2 hi) 2) 360)))))))))
 ;
 
 (defn numf [key]
@@ -147,9 +150,11 @@
           w (calc-w
               (min-max-avg (keep (numf :w) data))
               (min-max-avg (keep (numf :g) data)))
-          b (when-let
-              [b (calc-b (keep #(when-let [b (:b %)] b) data))]
-              {:avg b})]
+          b (let [max_w (:max w)]
+              (when (and max_w (< 0 max_w))
+                (when-let
+                  [b (calc-b (keep #(when-let [b (:b %)] b) data))]
+                  {:avg b})))]
       (into {}
         (filter second
           (conj tph [:w w] [:b b]))))
@@ -172,10 +177,11 @@
 (defn worker [this-hour]
   (if-let [last-hour (get-last-hour)]
     (loop [t0 (t/plus (t/floor last-hour t/hour) ONE_HOUR)]
-      (when (t/before? t0 this-hour)
-        (let [t1 (t/plus t0 ONE_HOUR)]
-          (calc-hour t0 t1)
-          (recur t1))))
+      (info "worker last-hour:" last-hour)
+      ;(when (t/before? t0 this-hour)
+      (let [t1 (t/plus t0 ONE_HOUR)]
+        (calc-hour t0 t1)
+        (recur t1)))
     ;;
     (error "worker: unable to get last hour")))
 ;
@@ -186,12 +192,13 @@
         pseq      (tp/periodic-seq
                     (t/plus (t/floor (t/now) t/hour) offset)
                     interval)]
+    (info "params:" offset interval)
     (chime-at pseq worker)))
 ;
 
-(defn stop [cancel]
-  (when cancel
-    (cancel)))
+(defn stop [cron]
+  (when cron
+    (cron)))    ;; stop it
 ;
 
 
@@ -199,7 +206,7 @@
   :start
     (if-let [cnf (-> conf :cron :meteo)]
       (start cnf)
-      false)  ;; disabled in config
+      false)    ;; cron disabled in config
   :stop
     (stop cron))
 ;

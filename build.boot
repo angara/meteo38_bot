@@ -3,7 +3,7 @@
 ;;
 
 (def project
-  {:name "angara.net/bots" :version "0.6.0"})
+  {:name "angara.net/bots" :version "0.6.1"})
 
 (def jar-main 'bots.main)
 (def jar-file "bots.jar")
@@ -17,20 +17,20 @@
   :dependencies
   '[
     [org.clojure/clojure "1.8.0"]
-    [org.clojure/core.async "0.3.442"]
+    [org.clojure/core.async "0.3.443"]
     [org.clojure/core.cache "0.6.5"]
 
-    [org.clojure/tools.logging "0.3.1"]
+    [org.clojure/tools.logging "0.4.0"]
     [ch.qos.logback/logback-classic "1.2.3"]
 
     [clj-time "0.13.0"]
-    [clj-http "3.5.0"]
-    [jarohen/chime "0.2.1"]
+    [clj-http "3.6.1"]
+    [jarohen/chime "0.2.2"]
 
-    [ring/ring-core "1.6.0"]
+    [ring/ring-core "1.6.1"]
     [ring/ring-json "0.4.0"]
     [ring/ring-headers "0.3.0"]
-    [ring/ring-jetty-adapter "1.6.0"]
+    [ring/ring-jetty-adapter "1.6.1"]
 
     [cheshire "5.7.1"]
     [compojure "1.6.0"]
