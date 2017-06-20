@@ -176,7 +176,7 @@
 
 (defn worker [this-hour]
   (if-let [last-hour (get-last-hour)]
-    (loop [t0 (t/floor last-hour t/hour)]
+    (loop [t0 (t/minus (t/floor last-hour t/hour) ONE_HOUR)]
       (info "worker last-hour:" last-hour)
       (when (t/before? t0 this-hour)
         (let [t1 (t/plus t0 ONE_HOUR)]

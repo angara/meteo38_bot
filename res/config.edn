@@ -47,11 +47,11 @@
     :convert-bin "/usr/bin/convert"
 
   }
-  
+
   :cron {
     :meteo {
-      :offset 120       ;; seconds
-      :interval 1200
+      :offset 30       ;; seconds
+      :interval 900
     }
   }
 
