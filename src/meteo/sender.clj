@@ -30,7 +30,9 @@
       (debug "time:" tm "subs:" (count subs) "ids:" (count ids))
       (doseq [id ids]
         (tg/send-message apikey cid
-          {:text (format-st (stm id)) :parse_mode "Markdown"})))))
+          { :text (format-st (stm id)) 
+            :parse_mode "Markdown"
+            :disable_web_page_preview true})))))
 ;
 
 (defn minute-loop [run-flag cnf]

@@ -5,7 +5,7 @@
     [clojure.string :as s]
     [clj-time.core :as tc]
     [mlib.time :refer [hhmm ddmmyy]]
-    [meteo.util :refer [md-link gmaps-link]]))
+    [meteo.util :refer [md-link gmaps-link meteo-st-link]]))
 ;
 
 (defn hpa-mmhg [h]
@@ -70,18 +70,11 @@
     (let [data  (:last st)
           dist  (:dist st)
           ts    (:ts data)
-          gl    (gmaps-link (:ll st))
+          ;;gl    (gmaps-link (:ll st))
+          gl    (meteo-st-link (:_id st))
           fresh (tc/minus (tc/now) (tc/minutes 70))]
       (str
-        "*" (:title st) "*"
-          (when dist (str " \u00A0(" (nf (/ dist 1000)) " км)"))
-          "\n"
-        (when-let [d (:descr st)]
-          (str (md-link d gl) "\n"))
-        (when-let [a (:addr st)]
-          (str (md-link a gl) "\n"))
-        "'" (tmf ts) "\n"
-        "\n"
+        "*" (:title st) "*\n"
         (if (and ts (tc/after? ts fresh))
           (str
             (format-t (:t data))
@@ -89,7 +82,15 @@
             (format-p (:p data))
             (format-wind (:w data) (:g data) (:b data))
             (format-water (:wt data) (:wl data)))
-          (str "Нет данных."))))))
+          (str "Нет данных.\n"))
+        ;
+        (when-let [d (:descr st)]
+          (str (md-link d gl) "\n"))
+        (when-let [a (:addr st)]
+          (str (md-link a gl) "\n"))
+        "'" (tmf ts)
+        (when dist (str " \u00A0(" (nf (/ dist 1000)) " км)"))
+        "\n"))))
 ;
 
 ;;.

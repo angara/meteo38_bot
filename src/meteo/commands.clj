@@ -82,7 +82,9 @@
           id   (:_id st)
           tail (next sts)
           kbd  (st-kbd id (some #{id} favs) (seq tail))
-          par  {:text (format-st st) :parse_mode "Markdown"}]
+          par  {:text (format-st st)
+                :parse_mode "Markdown"
+                :disable_web_page_preview true}]
       (sess-save cid {:sts tail})
       (tg/send-message apikey cid (merge par kbd)))))
 ;
@@ -125,7 +127,9 @@
     (doseq [f favs]
       (when-let [st (st-by-id f)]
         (tg/send-message apikey cid
-          {:text (format-st st) :parse_mode "Markdown"})))))
+          { :text (format-st st)
+            :parse_mode "Markdown"
+            :disable_web_page_preview true})))))
 ;
 
 

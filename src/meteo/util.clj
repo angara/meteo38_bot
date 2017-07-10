@@ -19,6 +19,10 @@
   (str "[" text "](" url ")"))
 ;
 
+(defn meteo-st-link [st-id]
+  (str "http://angara.net/meteo/st/" st-id))
+;
+
 (defn gmaps-link [ll & [{z :z t :t}]]
   (let [c (str (second ll) "," (first ll))]
     (str "https://maps.google.com/maps?"
