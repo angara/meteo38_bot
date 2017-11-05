@@ -7,18 +7,27 @@
 
   :tz "Asia/Irkutsk"
 
-  :mdb {
-    :angara { :uri "mongodb://user:pass@localhost:22022/angara" }
-    :meteo  { :uri "mongodb://user:pass@localhost:22022/meteo"  }
-  }
+  :mdb 
+  {
+    :angara { :uri "mongodb://user:pass@localhost:22022/angara"}
+    :meteo  { :uri "mongodb://user:pass@localhost:22022/meteo"}}
+  
 
   ;; https://github.com/ring-clojure/ring/blob/master/ring-jetty-adapter/src/ring/adapter/jetty.clj
   :http {
-    :host  "127.0.0.1"
-    :port  8001
-    :join? false
-  }
+         :host  "127.0.0.1"
+         :port  8001
+         :join? false}
+  
+  :telegram 
+  {
+    :polling
+    {
+      :sender-sleep 5000
+      :poll-limit   100
+      :poll-timeout 3}}     ;; must be less than socket-timeout!
 
+  
   ; ;; https://github.com/brettwooldridge/HikariCP
   ; :psql {
   ;   :jdbc-url "jdbc:postgresql://localhost:5516/angara"
@@ -39,49 +48,67 @@
   ; :mailru-top         "474619"
   ; :analytics          "UA-486770-1"
 
-  :slowreq {
-    :ms 1000
-  }
+  :slowreq 
+  {
+    :ms 1000}
 
-  :photo {
-    :convert-bin "/usr/bin/convert"
+  :photo 
+  {
+    :convert-bin "/usr/bin/convert"}
 
-  }
-
-  :cron {
+  :cron 
+  {
     :meteo {
-      :offset 30       ;; seconds
-      :interval 900
-    }
-  }
+            :offset 30       ;; seconds
+            :interval 900}}
 
-  :bots {
-    :angarabot {
+  :forumnews 
+  {
+    :bot            :angara_bot
+    :age-limit      8000    ;; 2+ hours (sec)
+    :fetch-limit    100     ;; 
+    :fetch-interval 600     ;; rescan period (sec)
+    :title-length   100
+    :text-length    100
+    :topic-max      10}     ;; topics per message
+  ;
+
+  :bots 
+  {
+    :angarabot 
+    {
       :name "angarabot"
       :apikey ""          ;; disabled when ampty
       :sender-sleep 5000
       :poll-limit 100
       :poll-timeout 3     ;; must be less than socket-timeout!
-
       :photo-dir "var/photos"
-      :photo-url "..."
-    }
-    :meteo38bot {
+      :photo-url "..."}
+
+    :angara_bot
+    {
+      :name "angara_bot"
+      :apikey ""}          ;; disabled when ampty
+
+    :meteo38bot 
+    {
       :name "meteo38bot"
       :apikey ""
       :sender-sleep 5000
       :poll-limit 100
-      :poll-timeout 3     ;; must be less than socket-timeout!
-    }
-    :skichat {
+      :poll-timeout 3}     ;; must be less than socket-timeout!
+
+    :skichat 
+    {
       :name "skichat"
       :apikey ""          ;; bot start disabled when ampty
       :sender-sleep 5000
       :poll-limit 100
       :poll-timeout 3
-      :api-error-sleep 3000
-    }
-  }
+      :api-error-sleep 3000}}
+
+  ;; /bots    
+  
 
   :weather
   {
@@ -91,9 +118,9 @@
       :key "DARKSKYAPIKEY"
       :latlng "54,101"
       :params "?lang=ru&units=si&exclude=minutely"
-      :timeout 3000
-    }
-  }
+      :timeout 3000}}
+    
+  
 
   ; :locations {
   ;   "иркутск"
@@ -102,21 +129,24 @@
   ;   "мамай" "51.391531, 104.846785"
   ; }
 
-  :sendmail {
-    :smtp {
+  :sendmail 
+  {
+    :smtp 
+    {
       :host "smtp.yandex.com"
       :ssl  true
       :port 465
       :user "noreply@angara.net"
-      :pass "PASSWORD"
-    }
-    :envel {
+      :pass "PASSWORD"}
+
+    :envel 
+    {
       :from "noreply@angara.net"
       :to []
-      :subject ""
-    }
-  }
+      :subject ""}}}
+    
+;;.  
 
-}
+
 
 ;;.

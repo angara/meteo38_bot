@@ -82,7 +82,7 @@
             (format-p (:p data))
             (format-wind (:w data) (:g data) (:b data))
             (format-water (:wt data) (:wl data)))
-          (str "Нет данных.\n"))
+          (str "- нет данных -\n"))
         ;
         (when-let [d (:descr st)]
           (str (md-link d gl) "\n"))
