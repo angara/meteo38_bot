@@ -59,14 +59,19 @@
 
 (defstate mbot
   :start
-    {:run-flag (atom nil)
-     :thread (->
-                #(update-loop mbot
-                    (-> conf :bots :meteo38bot)
-                    dispatch-update)
-                Thread. .start)}
+    (let [cfg (-> conf :bots :meteo38bot)]
+      (if (:apikey cfg)
+        {:run-flag (atom nil)
+         :thread (->
+                    #(update-loop mbot cfg dispatch-update)
+                    Thread. 
+                    .start)}
+        (do
+          (warn "mbot did not start")
+          false)))
   :stop
-    (reset! (:run-flag mbot) false))
+    (when mbot
+      (reset! (:run-flag mbot) false)))
 ;
 
 ;;.

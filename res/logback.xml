@@ -15,6 +15,7 @@
 -->  
   <logger name="cron"   level="DEBUG" />
   <logger name="meteo"  level="DEBUG" />
+  <logger name="forumnews"   level="DEBUG" />
 
   <root level="INFO">
     <appender-ref ref="MAIN"/>

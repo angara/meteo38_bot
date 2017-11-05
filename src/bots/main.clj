@@ -7,6 +7,7 @@
     [angara.process]
     [meteo.core]
     [cron.meteo]
+    [forumnews.core]
     [skichat.process])
   (:gen-class))
 ;

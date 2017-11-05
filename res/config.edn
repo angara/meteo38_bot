@@ -12,12 +12,19 @@
     :angara { :uri "mongodb://user:pass@localhost:22022/angara"}
     :meteo  { :uri "mongodb://user:pass@localhost:22022/meteo"}}
   
-
+  :psql 
+  {
+    :jdbc-url "jdbc:postgresql://localhost:5516/angara"
+    :username "angara"
+    :password ""}
+  ;      
+  
   ;; https://github.com/ring-clojure/ring/blob/master/ring-jetty-adapter/src/ring/adapter/jetty.clj
-  :http {
-         :host  "127.0.0.1"
-         :port  8001
-         :join? false}
+  :http 
+  {
+    :host  "127.0.0.1"
+    :port  8001
+    :join? false}
   
   :telegram 
   {
@@ -58,19 +65,21 @@
 
   :cron 
   {
-    :meteo {
-            :offset 30       ;; seconds
-            :interval 900}}
+    :meteo 
+    {
+      :offset 30       ;; seconds
+      :interval 900}}
 
   :forumnews 
   {
     :bot            :angara_bot
-    :age-limit      8000    ;; 2+ hours (sec)
+    :channel        "@angara_forum"
+    :age-limit      86400    ;; 2+ hours (sec)
     :fetch-limit    100     ;; 
     :fetch-interval 600     ;; rescan period (sec)
-    :title-length   100
-    :text-length    100
-    :topic-max      10}     ;; topics per message
+    ; :title-length   100
+    ; :text-length    100
+    :topics-per-message 10}
   ;
 
   :bots 
@@ -78,7 +87,7 @@
     :angarabot 
     {
       :name "angarabot"
-      :apikey ""          ;; disabled when ampty
+      :apikey nil          ;; disabled when ampty
       :sender-sleep 5000
       :poll-limit 100
       :poll-timeout 3     ;; must be less than socket-timeout!
@@ -88,12 +97,12 @@
     :angara_bot
     {
       :name "angara_bot"
-      :apikey ""}          ;; disabled when ampty
+      :apikey nil}          ;; disabled when ampty
 
     :meteo38bot 
     {
       :name "meteo38bot"
-      :apikey ""
+      :apikey nil
       :sender-sleep 5000
       :poll-limit 100
       :poll-timeout 3}     ;; must be less than socket-timeout!
@@ -101,7 +110,7 @@
     :skichat 
     {
       :name "skichat"
-      :apikey ""          ;; bot start disabled when ampty
+      :apikey nil          ;; bot start disabled when ampty
       :sender-sleep 5000
       :poll-limit 100
       :poll-timeout 3

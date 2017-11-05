@@ -3,7 +3,7 @@
 ;;
 
 (def project
-  {:name "angara.net/bots" :version "0.6.1"})
+  {:name "angara.net/bots" :version "0.7.1"})
 
 (def jar-main 'bots.main)
 (def jar-file "bots.jar")
@@ -41,14 +41,14 @@
 
     [com.novemberain/monger "3.1.0"]
 
-    ; [org.postgresql/postgresql "42.0.0"]
+    [org.postgresql/postgresql "42.1.4"]
 
     ;; https://funcool.github.io/clojure.jdbc/latest/
-    ; [funcool/clojure.jdbc "0.9.0"]
+    [funcool/clojure.jdbc "0.9.0"]
     ;; https://github.com/tomekw/hikari-cp
-    ; [hikari-cp "1.7.5"]
+    [hikari-cp "1.8.1"]
 
-    ; [honeysql "0.8.1"]  ; https://github.com/jkk/honeysql
+    [honeysql "0.9.1"]  ; https://github.com/jkk/honeysql
 
     ; [com.draines/postal "2.0.2"]
 

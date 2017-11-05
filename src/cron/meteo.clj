@@ -206,7 +206,9 @@
   :start
     (if-let [cnf (-> conf :cron :meteo)]
       (start cnf)
-      false)    ;; cron disabled in config
+      (do
+        (warn "cron.meteo did not start")
+        false))
   :stop
     (stop cron))
 ;
