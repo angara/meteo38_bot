@@ -84,6 +84,8 @@
           (when (not= last-tid max-tid)
             (save-last-tid max-tid))
           (doseq [tps (partition tpm tpm nil topics)]
+            (doseq [t tps]
+              (debug "forumnews: new topic -" (:tid t) (:title t)))
             (update-channel apikey chn tps)))))
     (catch Exception e
       (warn "forum-task:" e))))
