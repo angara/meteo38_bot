@@ -82,6 +82,15 @@
     :topics-per-message 10}
   ;
 
+  :forumphotos
+  {
+    :bot            :angara_bot
+    :channel        "@angara_photos"
+    :age-limit      86400    ;; 2+ hours (sec)
+    :fetch-limit    100     ;; 
+    :fetch-interval 600}     ;; rescan period (sec)
+  ;
+
   :bots 
   {
     :angarabot 

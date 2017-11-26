@@ -6,7 +6,9 @@
 ;
 
 
-(def socket-timeout 10000)
+(def RETRY_COUNT    5)
+(def SOCKET_TIMEOUT 10000)
+
 
 (defn api-url [token method]
   (str "https://api.telegram.org/bot" token "/" (name method)))
@@ -16,23 +18,41 @@
   (str "https://api.telegram.org/file/bot" token "/" path))
 ;
 
-(defn api
-  [token method params & [{timeout :timeout}]]
+
+(defn api-try [method url data]
   (try
-    (let [tout (or timeout socket-timeout)
-          res (:body
-                (http/post (api-url token method)
-                  { :content-type :json
-                    :as :json
-                    :form-params params
-                    :throw-exceptions false
-                    :socket-timeout tout
-                    :conn-timeout tout}))]
+    (let [res (:body (http/post url data))]
       (if (:ok res)
         (:result res)
-        (info "tg-api:" method res)))
+        (do
+          (info "tg-api-try:" method res)
+          (when
+            (-> res (:error_code) (first) #{\3 \5}) ;; 3xx or 5xx codes
+            ::recur))))
     (catch Exception e
-      (warn "tg-api:" method (.getMessage e)))))
+      (do
+        (warn "tg-api-try:" method (.getMessage e))
+        ::recur))))
+;
+
+(defn api [token method params & [{timeout :timeout retry :retry}]]
+  (let [tout (or timeout SOCKET_TIMEOUT)
+        rmax (or retry RETRY_COUNT)
+        url  (api-url token method)
+        data { :content-type :json
+               :as :json
+               :form-params params
+               :throw-exceptions false
+               :socket-timeout tout
+               :conn-timeout tout}]
+    (loop [retry rmax]
+      (if (< 0 retry)
+        (let [rc (api-try method url data)]
+          (if (= rc ::recur)  
+            (recur (dec retry))
+            rc))
+        ;;
+        (warn "tg-api:" "retry limit reached -" rmax)))))
 ;
 
 (defn send-text [token chat text & [markdown?]]
@@ -67,8 +87,8 @@
       (:body
         (http/get (file-url token path)
           { :as :byte-array
-            :socket-timeout (or timeout socket-timeout)
-            :conn-timeout   (or timeout socket-timeout)}))
+            :socket-timeout (or timeout SOCKET_TIMEOUT)
+            :conn-timeout   (or timeout SOCKET_TIMEOUT)}))
       (catch Exception e
         (warn "get-file:" file-id (.getMessage e))))
     ;
@@ -80,7 +100,7 @@
     or File/InputStream/byte-array"
   [token method mpart & [{timeout :timeout}]]
   (try
-    (let [tout (or timeout socket-timeout)
+    (let [tout (or timeout SOCKET_TIMEOUT)
           res (:body
                 (http/post (api-url token method)
                   { :multipart

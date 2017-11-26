@@ -14,26 +14,20 @@
 
 (defmacro debug [message & args]
   `(clojure.tools.logging/logp :debug
-      (str ~(source-line &form) ": " ~message)
+      (str "(" ~(source-line &form) ") " ~message)
       ~@args))
 ;
 
 (defmacro info [message & args]
-  `(clojure.tools.logging/logp :info
-      (str ~(source-line &form) ": " ~message)
-      ~@args))
+  `(clojure.tools.logging/logp :info ~message ~@args))
 ;
 
 (defmacro warn [message & args]
-  `(clojure.tools.logging/logp :warn
-      (str ~(source-line &form) ": " ~message)
-      ~@args))
+  `(clojure.tools.logging/logp :warn ~message ~@args))
 ;
 
 (defmacro error [message & args]
-  `(clojure.tools.logging/logp :error
-      (str ~(source-line &form) ": " ~message)
-      ~@args))
+  `(clojure.tools.logging/logp :error ~message ~@args))
 ;
 
 (comment

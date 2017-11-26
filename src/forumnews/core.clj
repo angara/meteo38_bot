@@ -11,7 +11,8 @@
     [mlib.time :refer [now-ms]]
     [mlib.psql.core :refer [fetch]]
     [mlib.tlg.core :as tg]
-    [bots.db :refer [dbc]]))
+    [bots.db :refer [dbc]]
+    [forumnews.photos :refer [forum-photos]]))
 ;
 
 
@@ -32,7 +33,7 @@
 
 
 (defn get-last-tid []
-  (try-warn "save-last-tid:"
+  (try-warn "get-last-tid:"
     (->
       (mc/find-map-by-id (dbc) BOTSTATE_COLL BOTSTATE_ID) 
       (:last_tid 0))))
@@ -105,10 +106,11 @@
 ;
 
 (defn stop-periodical-task [process]
-  (reset! (:runflag process) false))                      
+  (when process
+    (reset! (:runflag process) false)))                      
 ;
 
-(defstate process
+(defstate forumnews
   :start
     (if-let [cfg (:forumnews conf)]
       (do
@@ -120,6 +122,22 @@
         (warn "forumnews did not start")
         false))
   :stop
-    (stop-periodical-task process))
+    (stop-periodical-task forumnews))
+;
+
+(defstate forumphotos
+  :start
+    (if-let [cfg (:forumphotos conf)]
+      (do
+        (debug "forumphotos start:" cfg)
+        (start-periodical-task 
+          (* (:fetch-interval cfg) 1000)
+          #(forum-photos cfg)))
+      (do
+        (warn "forumphoto did not start")
+        false))
+  :stop
+    (stop-periodical-task forumphotos))
+;
 
 ;;.
