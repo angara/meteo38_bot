@@ -87,8 +87,8 @@
     :bot            :angara_bot
     :channel        "@angara_photos"
     :age-limit      86400    ;; 2+ hours (sec)
-    :fetch-limit    100     ;; 
-    :fetch-interval 600}     ;; rescan period (sec)
+    :fetch-limit    15       ;; 
+    :fetch-interval 300}     ;; rescan period (sec)
   ;
 
   :bots 

@@ -6,14 +6,16 @@
     [honeysql.core :as sql]
     [honeysql.helpers :as hs]
     [mlib.conf :refer [conf]]
-    [mlib.core :refer [hesc to-int]]
+    [mlib.core :refer [to-int]]
     [mlib.log :refer [debug info warn try-warn]]
     [mlib.time :refer [now-ms]]
     [mlib.psql.core :refer [fetch]]
-    [mlib.tlg.core :as tg]
+    [mlib.tlg.core :as tg :refer [hesc]]
     [bots.db :refer [dbc]]))
 ;
 
+
+(def MSGS_PER_PAGE 20)
 
 ;; select msgid, topic, owner, updated, attach from forum_msgs 
 ;; where attach ilike 'jpg%' and not censored order by msgid;
@@ -35,6 +37,14 @@
     (hs/order-by [:mid :asc])
     (hs/limit :?limit)))
 ;    
+
+(def TOPIC-MIDS
+  (->
+    (hs/select [:m.msgid :mid])
+    (hs/from [:forum_msgs :m])
+    (hs/where [:= :m.topic :?tid])
+    (hs/order-by [:mid :asc])))
+;
 
 (def BOTSTATE_COLL "bot_state")
 (def BOTSTATE_ID   "forumphotos")
@@ -63,6 +73,14 @@
       :limit     fetch-limit}))
 ;
 
+(defn msg-page [msg]
+  (let [mid (:mid msg)
+        mids (->> (fetch TOPIC-MIDS {:tid (:tid msg)}) (map :mid))
+        idx  (first (keep-indexed (fn [i v] (when (= mid v) i)) mids))]
+    (if idx
+      (assoc msg :p (quot idx MSGS_PER_PAGE))
+      msg)))
+;
 
 (defn base-uri [mid]
   (let [d0 (-> mid (mod 10000) (quot 100))
@@ -70,33 +88,41 @@
     (format "/upload/%02d/%02d/f_%d.jpg" d0 d1 mid)))
   
 
+(defn word-trunc [text len & [ellip]]
+  (if (<= (.length text) len)
+    text
+    (let [ellip (or ellip "...")
+          len (- len (.length ellip))
+          idx (s/last-index-of text " " len)]
+      (str (.substring text 0 (or idx len)) ellip))))
+;
+
+
 (defn update-channel [apikey channel msg]
   (Thread/sleep 30)
   (debug "msg:" msg)
-  (let [url (str "http://angara.net" (base-uri (:mid msg)))
-        un (hesc (:username msg))
+  (let [photo-url (str "http://angara.net" (base-uri (:mid msg)))
+        msg-url   (str "http://angara.net/forum/t" (:tid msg) 
+                    (when-let [p (:p msg)] (str "?p=" p)) "#" (:mid msg))
+        username (:username msg)
+        ll (str "\n\n" username " - " msg-url)
+        txt (str "Из темы:\n" (:title msg))
         txt (str 
-              "<a href='http://angara.net/forum/t" (:tid msg) "'>"
-              (hesc (:title msg)) 
-              "</a>"
-              "\n"
-              "[" (:mid msg) "] - "
-              "<a href='http://angara.net/user/" un "'>" un "</a>")] 
-            
-    (debug "url:" url txt)
-    (and
-      (tg/api apikey :sendPhoto {:chat_id channel :photo url})
-      (tg/send-message apikey channel 
-        {:text txt :parse_mode "HTML" :disable_web_page_preview true}))))
+              (word-trunc txt (- 199 (.length ll)))
+              ll)]
+    ; (debug "txt:" txt)
+    (tg/api apikey :sendPhoto 
+      {:chat_id channel :photo photo-url :caption txt})))
 ;
 
 (defn forum-photos [cfg]
   (try
-    (let [bot (:bot cfg)
-          apikey (get-in (:bots conf) [bot :apikey])
-          chn (:channel cfg)
+    (let [bot-id  (:bot cfg)
+          chn     (:channel cfg)
+          apikey  (get-in conf [:bots bot-id :apikey])
           last-mid (get-last-mid)
-          msgs (not-empty (fetch-msgs last-mid (:age-limit cfg) (:fetch-limit cfg)))]
+          msgs (not-empty (fetch-msgs last-mid (:age-limit cfg) (:fetch-limit cfg)))
+          msgs (map msg-page msgs)]
       (when msgs
         (let [max-mid (reduce #(max %1 (:mid %2)) last-mid msgs)]
           (save-last-mid max-mid)

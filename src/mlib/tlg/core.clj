@@ -1,14 +1,15 @@
 
 (ns mlib.tlg.core
   (:require
+    [clojure.string :refer [escape]]
     [mlib.log :refer [info warn]]
     [clj-http.client :as http]))
 ;
 
 
-(def RETRY_COUNT    5)
-(def SOCKET_TIMEOUT 10000)
-
+(def RETRY_COUNT      5)
+(def SOCKET_TIMEOUT   8000)
+(def SOCKET_ERR_DELAY 1000)
 
 (defn api-url [token method]
   (str "https://api.telegram.org/bot" token "/" (name method)))
@@ -18,6 +19,9 @@
   (str "https://api.telegram.org/file/bot" token "/" path))
 ;
 
+(defn hesc [text]
+  (escape text {\& "&amp;" \< "&lt;" \> "&gt;" \" "&quot;"}))
+;
 
 (defn api-try [method url data]
   (try
@@ -32,7 +36,8 @@
     (catch Exception e
       (do
         (warn "tg-api-try:" method (.getMessage e))
-        ::recur))))
+        (Thread/sleep SOCKET_ERR_DELAY)))))
+        ;; ::recur))))
 ;
 
 (defn api [token method params & [{timeout :timeout retry :retry}]]

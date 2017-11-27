@@ -1,7 +1,7 @@
 (ns forumnews.core
   (:require
     [clojure.string :as s]
-    [clojure.core.async :refer [thread]]
+    [clojure.core.async :refer [thread <!!]]
     [clj-time.core :as tc]
     [monger.collection :as mc]
     [honeysql.helpers :as hs]
@@ -10,7 +10,7 @@
     [mlib.log :refer [debug info warn try-warn]]
     [mlib.time :refer [now-ms]]
     [mlib.psql.core :refer [fetch]]
-    [mlib.tlg.core :as tg]
+    [mlib.tlg.core :as tg :refer [hesc]]
     [bots.db :refer [dbc]]
     [forumnews.photos :refer [forum-photos]]))
 ;
@@ -53,10 +53,6 @@
       :last-tid  last-tid 
       :last-time (tc/minus (tc/now) (tc/seconds age-limit))
       :limit     fetch-limit}))
-;
-
-(defn hesc [text]
-  (s/escape text {\& "&amp;" \< "&lt;" \> "&gt;" \" "&quot;"}))
 ;
 
 (defn update-channel [apikey channel topics]
@@ -107,7 +103,8 @@
 
 (defn stop-periodical-task [process]
   (when process
-    (reset! (:runflag process) false)))                      
+    (reset! (:runflag process) false)                      
+    (<!! (:thread process))))
 ;
 
 (defstate forumnews
