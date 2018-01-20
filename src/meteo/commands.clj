@@ -23,28 +23,32 @@
 ;
 
 
+(def HELP_TEXT
+  (str
+    "@meteo38bot - информация с сети автоматических метеостанций онлайн,"
+    " рассылка уведомлений в указаное время.\n\n"
+    "По кнопке <b>Погода</b> выводятся последние данные с выбранных метеостанций."
+    " Кнопка <b>Рядом</b> использует функцию геолокации для поиска ближайших станций."
+    " В разделе <b>Меню</b> настройки списка избранных станций и управление рассылками."
+    " Для поиска станции по названию или адресу отправьте текст.\n\n"
+    "Пожелания и сообщения об ошибках пишите в группу - https://telegram.me/meteo38"
+    " или https://t.me/angara_talks"))
+;
 
 (defn cmd-help [msg par]
 
   (let [chat    (cid msg)
-        user_id (-> msg :from :id)]  
+        user_id (-> msg :from :id)  
+        help    {:text HELP_TEXT :parse_mode "HTML"}]
 
     (start-user user_id
       { :start {:ts (tc/now) :param par}
         :from (:from msg)})
 
     (tg/send-message apikey chat
-      { :text
-          (str
-            "@meteo38bot - информация с сети автоматических метеостанций онлайн,"
-            " рассылка уведомлений в указаное время.\n\n"
-            "По кнопке *Погода* выводятся последние данные с выбранных метеостанций."
-            " Кнопка *Рядом* использует функцию геолокации для поиска ближайших станций."
-            " В разделе *Меню* настройки списка избранных станций и управление рассылками."
-            " Для поиска станции по названию или адресу отправьте текст.\n\n"
-            "Пожелания и сообщения об ошибках пишите в группу - https://telegram.me/meteo38")
-        :parse_mode "Markdown"
-        :reply_markup (when (= chat user_id) main-buttons)})))
+        (if (= chat user_id) 
+          (assoc help :reply_markup main-buttons)
+          help))))
 ;
 
 
@@ -154,7 +158,7 @@
 
 (defn cmd-find [msg par]
   (if (<= 3 (count par))
-    (st-search msg par)
+    (st-search msg (lower-case par))
     (tg/send-text apikey (cid msg) 
       (str
         "Для поиска станции введите не менее трех символов.\n"

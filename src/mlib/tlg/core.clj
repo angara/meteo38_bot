@@ -41,6 +41,7 @@
 ;
 
 (defn api [token method params & [{timeout :timeout retry :retry}]]
+  (Thread/sleep 20)
   (let [tout (or timeout SOCKET_TIMEOUT)
         rmax (or retry RETRY_COUNT)
         url  (api-url token method)
