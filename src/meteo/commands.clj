@@ -26,24 +26,25 @@
 
 (defn cmd-help [msg par]
 
-  ;; TODO: shoulb be in cmd-start !!!
-  (start-user
-    (-> msg :from :id)
-    { :start {:ts (tc/now) :param par}
-      :from (:from msg)})
+  (let [chat    (cid msg)
+        user_id (-> msg :from :id)]  
 
-  (tg/send-message apikey (cid msg)
-    {:text
-      (str
-        "@meteo38bot - информация с сети автоматических метеостанций онлайн,"
-        " рассылка уведомлений в указаное время.\n\n"
-        "По кнопке *Погода* выводятся последние данные с выбранных метеостанций."
-        " Кнопка *Рядом* использует функцию геолокации для поиска ближайших станций."
-        " В разделе *Меню* настройки списка избранных станций и управление рассылками."
-        " Для поиска станции по названию или адресу отправьте текст.\n\n"
-        "Пожелания и сообщения об ошибках пишите в группу - https://telegram.me/meteo38")
-     :parse_mode "Markdown"
-     :reply_markup main-buttons}))
+    (start-user user_id
+      { :start {:ts (tc/now) :param par}
+        :from (:from msg)})
+
+    (tg/send-message apikey chat
+      { :text
+          (str
+            "@meteo38bot - информация с сети автоматических метеостанций онлайн,"
+            " рассылка уведомлений в указаное время.\n\n"
+            "По кнопке *Погода* выводятся последние данные с выбранных метеостанций."
+            " Кнопка *Рядом* использует функцию геолокации для поиска ближайших станций."
+            " В разделе *Меню* настройки списка избранных станций и управление рассылками."
+            " Для поиска станции по названию или адресу отправьте текст.\n\n"
+            "Пожелания и сообщения об ошибках пишите в группу - https://telegram.me/meteo38")
+        :parse_mode "Markdown"
+        :reply_markup (when (= chat user_id) main-buttons)})))
 ;
 
 
@@ -132,7 +133,6 @@
             :disable_web_page_preview true})))))
 ;
 
-
 (defn st-search [msg txt]
   (let [cid (cid msg)
         fnm (fn [stn]
@@ -152,9 +152,18 @@
       (tg/send-text apikey cid "Станции не найдены.\n/help" true))))
 ;
 
+(defn cmd-find [msg par]
+  (if (<= 3 (count par))
+    (st-search msg par)
+    (tg/send-text apikey (cid msg) 
+      (str
+        "Для поиска станции введите не менее трех символов.\n"
+        "Например: /find Байкал"))))
+;
+
 (defn parse-command [text]
-  (when-let [match (re-matches #"^/([A-Za-z0-9]+)([ _]+(.+))?$" text)]
-    [(second match) (get match 3)]))
+  (when-let [match (re-matches #"^/([A-Za-z0-9]+)(@[A-Za-z0-9]+)?([ _]+(.+))?$" text)]
+    [(second match) (get match 4)]))
 ;
 
 (defn on-message [msg]
@@ -166,13 +175,14 @@
       cmd
         (condp = (lower-case cmd)
           "start" (cmd-start msg par)
-          "help"  (cmd-help msg par)
-          "all"   (cmd-all  msg par)
-          "near"  (cmd-near msg par)
-          "favs"  (cmd-favs msg)
-          "subs"  (cmd-subs msg par)
-          "adds"  (cmd-adds msg par)
-                  (cmd-help msg nil))
+          "find"  (cmd-find  msg par)
+          "help"  (cmd-help  msg par)
+          "all"   (cmd-all   msg par)
+          "near"  (cmd-near  msg par)
+          "favs"  (cmd-favs  msg)
+          "subs"  (cmd-subs  msg par)
+          "adds"  (cmd-adds  msg par)
+                  (cmd-help  msg nil))
       text
         (let [txt (lower-case text)]
           (cond

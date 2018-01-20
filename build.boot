@@ -3,7 +3,7 @@
 ;;
 
 (def project
-  {:name "angara.net/bots" :version "0.7.1"})
+  {:name "angara.net/bots" :version "0.9.0"})
 
 (def jar-main 'bots.main)
 (def jar-file "bots.jar")
@@ -16,14 +16,14 @@
   ;; boot -d boot-deps ancient
   :dependencies
   '[
-    [org.clojure/clojure "1.8.0"]
-    [org.clojure/core.async "0.3.443"]
+    [org.clojure/clojure "1.9.0"]
+    [org.clojure/core.async "0.4.474"]
     [org.clojure/core.cache "0.6.5"]
 
     [org.clojure/tools.logging "0.4.0"]
     [ch.qos.logback/logback-classic "1.2.3"]
 
-    [clj-time "0.14.0"]
+    [clj-time "0.14.2"]
     [clj-http "3.7.0"]
     [jarohen/chime "0.2.2"]
 
@@ -41,19 +41,19 @@
 
     [com.novemberain/monger "3.1.0"]
 
-    [org.postgresql/postgresql "42.1.4"]
+    [org.postgresql/postgresql "42.2.0"]
 
     ;; https://funcool.github.io/clojure.jdbc/latest/
     [funcool/clojure.jdbc "0.9.0"]
     ;; https://github.com/tomekw/hikari-cp
-    [hikari-cp "1.8.1"]
+    [hikari-cp "2.0.1"]
 
     [honeysql "0.9.1"]  ; https://github.com/jkk/honeysql
 
     ; [com.draines/postal "2.0.2"]
 
     ;; https://github.com/martinklepsch/boot-garden
-    [org.martinklepsch/boot-garden "1.3.2-0" :scope "test"]
+    [org.martinklepsch/boot-garden "1.3.2-1" :scope "test"]
     [org.clojure/tools.namespace "0.2.11" :scope "test"]
     [proto-repl "0.3.1" :scope "test"]])
 ;

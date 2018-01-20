@@ -13,7 +13,7 @@
   <logger name="angara" level="DEBUG" />
   <logger name="bots"   level="DEBUG" />
 -->  
-  <logger name="cron"   level="DEBUG" />
+  <!-- <logger name="cron"   level="DEBUG" /> -->
   <logger name="meteo"  level="DEBUG" />
   <logger name="forumnews"   level="DEBUG" />
 
