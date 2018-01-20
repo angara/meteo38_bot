@@ -21,6 +21,7 @@
     (mbot-log upd)
     (condp #(%1 %2) upd
       :message :>> on-message
+      :edited_message :>> on-message
       :callback_query :>> on-callback
       (debug "unexpected:" upd))
     (catch Exception e
