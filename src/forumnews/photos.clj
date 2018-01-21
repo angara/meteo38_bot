@@ -52,8 +52,7 @@
 
 (defn get-last-mid []
   (try-warn "get-last-mid:"
-    (->
-      (mc/find-map-by-id (dbc) BOTSTATE_COLL BOTSTATE_ID) 
+    (-> (mc/find-map-by-id (dbc) BOTSTATE_COLL BOTSTATE_ID)
       (:last_mid 0))))
 ;
 
