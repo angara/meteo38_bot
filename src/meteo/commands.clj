@@ -178,15 +178,15 @@
     (cond
       cmd
         (condp = (lower-case cmd)
-          "start" (cmd-start msg par)
-          "find"  (cmd-find  msg par)
-          "help"  (cmd-help  msg par)
-          "all"   (cmd-all   msg par)
-          "near"  (cmd-near  msg par)
-          "favs"  (cmd-favs  msg)
-          "subs"  (cmd-subs  msg par)
-          "adds"  (cmd-adds  msg par)
-                  (cmd-help  msg nil))
+          "start"    (cmd-start msg par)
+          "find"     (cmd-find  msg par)
+          "help"     (cmd-help  msg par)
+          "near"     (cmd-near  msg par)
+          "favs"     (cmd-favs  msg)
+          "subs"     (cmd-subs  msg par)
+          "adds"     (cmd-adds  msg par)
+          "stations" (cmd-all   msg par)
+                     (cmd-help  msg nil))
       text
         (let [txt (lower-case text)]
           (cond
