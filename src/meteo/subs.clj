@@ -138,10 +138,6 @@
         favs (not-empty (get-favs cid))
         subs (not-empty (get-subs cid))]
     (cond
-      (not= cid (-> msg :from :id))
-      (tg/send-text apikey cid 
-        "Команда не рабтает в групповом чате.\nПерейдите в персональный чат с ботом: @meteo38bot")
-
       (not favs)
       (tg/send-text apikey cid "Ничего нет в Избранном!")
 
