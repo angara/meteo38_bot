@@ -19,7 +19,7 @@
         start-user user-track]]
     [meteo.menu :refer [cmd-menu]]
     [meteo.subs :refer [cmd-adds cmd-subs on-sbed]]
-    [meteo.stform :refer [format-st]]))
+    [meteo.stform :refer [format-st t-plus]]))
 ;
 
 
@@ -137,18 +137,23 @@
             :disable_web_page_preview true})))))
 ;
 
+(defn search-sts [query locat]
+  (->>
+    (st-near (locat-ll locat) (q-st-alive))
+    (filter 
+      (fn [stn]
+        (let [nm (-> stn :title str lower-case)
+              ad (-> stn :addr  str lower-case)
+              ds (-> stn :descr str lower-case)]
+          (or
+            (.contains nm query)
+            (.contains ad query)
+            (.contains ds query)))))))
+;
+
 (defn st-search [msg txt]
   (let [cid (cid msg)
-        fnm (fn [stn]
-                (let [nm (-> stn :title str lower-case)
-                      ad (-> stn :addr  str lower-case)
-                      ds (-> stn :descr str lower-case)]
-                  (or
-                    (.contains nm txt)
-                    (.contains ad txt)
-                    (.contains ds txt))))
-        locat  (:locat (sess-params cid) (default-locat))
-        sts (filter fnm (st-near (locat-ll locat) (q-st-alive)))]
+        sts (search-sts txt (:locat (sess-params cid) (default-locat)))]
     (if (seq sts)
       (do
         (sess-save cid {:sts sts})
@@ -170,6 +175,9 @@
     [(second match) (get match 4)]))
 ;
 
+(def SEARCH_TEXT_MIN 3)
+(def SEARCH_TEXT_MAX 10)
+
 (defn on-message [msg]
   (let [cid (cid msg)
         text (-> msg :text str trim not-empty)
@@ -188,13 +196,17 @@
           "stations" (cmd-all   msg par)
                      (cmd-help  msg nil))
       text
-        (let [txt (lower-case text)]
+        (let [txt (lower-case text)
+              text-len (.length text)]
           (cond
+            (-> msg :from :is_bot)  nil   ;; talk to humans only
             (= "погода" txt) (cmd-show msg)
             (= "меню"   txt) (cmd-menu msg nil)
-            :else  (if (<= 3 (.length text))
-                      (st-search msg txt)
-                      (cmd-help msg nil))))
+            :else  
+              (when (< text-len SEARCH_TEXT_MAX)
+                (if (<= SEARCH_TEXT_MIN text-len)
+                  (st-search msg txt)
+                  (cmd-help msg nil)))))
       locat
         (do
           (sess-save cid {:locat locat})
@@ -234,6 +246,36 @@
       ;
       (tg/api apikey :answerCallbackQuery
         {:callback_query_id (:id cbq) :text ""}))))
+;
+
+
+(def QUERY_MIN_LEN 3)
+(def QUERY_MAX 5)
+(def QUERY_CACHE_TIME 100)    ;; seconds
+
+
+(defn on-inline [inq]
+  (let [{id :id query :query {cid :id} :from} inq
+         q (-> query str trim lower-case)]
+    (when (<= QUERY_MIN_LEN (.length q))
+      (let [locat (:locat (sess-params cid) (default-locat))
+            sts (->> (search-sts q locat) (take QUERY_MAX))
+            res (for [s sts :let [t (-> s :last :t)]]
+                  { :type "article"
+                    :id (:_id s)
+                    :title (:title s)
+                    :description 
+                      (str (or (:descr s) (:addr s)) "\n"
+                        (if t (str (t-plus t) " \u00b0C" "")))
+                    :input_message_content
+                      { :message_text (format-st s)
+                        :parse_mode "Markdown"
+                        :disable_web_page_preview true}})]
+        (when (seq res)
+          (tg/api apikey :answerInlineQuery
+            { :inline_query_id id 
+              :cache_time QUERY_CACHE_TIME
+              :results res}))))))
 ;
 
 ;;.

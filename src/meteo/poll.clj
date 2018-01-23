@@ -9,7 +9,7 @@
     [mlib.tlg.core :as tg]
     ;
     [meteo.data :refer [mbot-log]]
-    [meteo.commands :refer [on-message on-callback]]))
+    [meteo.commands :refer [on-message on-callback on-inline]]))
 ;
 
 
@@ -23,7 +23,9 @@
       :message :>> on-message
       :edited_message :>> on-message
       :callback_query :>> on-callback
-      (debug "unexpected:" upd))
+      :inline_query   :>> on-inline
+      :chosen_inline_result nil
+      (debug "dispatch: unexpected update -" upd))
     (catch Exception e
       (warn "dispatch:" upd (or (.getMessage e) e)))))
 ;
