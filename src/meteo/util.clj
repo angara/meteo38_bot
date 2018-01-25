@@ -6,6 +6,9 @@
     [mlib.conf :refer [conf]]))
 ;
 
+(def FRESH_INTERVAL (tc/minutes 70))
+
+
 (defstate apikey
   :start
     (-> conf :bots :meteo38bot :apikey))
@@ -59,6 +62,13 @@
 (defn locat-ll [locat]
   [(:longitude locat) (:latitude locat)])
 ;
+
+(defn fresh-last [data]
+  (let [res (:last data)]
+    (when-let [ts (:ts res)]
+      (when (tc/after? ts (tc/minus (tc/now) FRESH_INTERVAL))
+        res))))
+;  
 
 
 (def main-buttons

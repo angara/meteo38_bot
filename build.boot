@@ -3,7 +3,7 @@
 ;;
 
 (def project
-  {:name "angara.net/bots" :version "0.9.0"})
+  {:name "angara.net/bots" :version "0.9.1"})
 
 (def jar-main 'bots.main)
 (def jar-file "bots.jar")

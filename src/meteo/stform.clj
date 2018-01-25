@@ -70,7 +70,6 @@
     (let [data  (:last st)
           dist  (:dist st)
           ts    (:ts data)
-          ;;gl    (gmaps-link (:ll st))
           gl    (meteo-st-link (:_id st))
           fresh (tc/minus (tc/now) (tc/minutes 70))]
       (str

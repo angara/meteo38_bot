@@ -19,7 +19,8 @@
         start-user user-track]]
     [meteo.menu :refer [cmd-menu]]
     [meteo.subs :refer [cmd-adds cmd-subs on-sbed]]
-    [meteo.stform :refer [format-st t-plus]]))
+    [meteo.stform :refer [format-st t-plus]]
+    [meteo.util :refer [fresh-last]]))
 ;
 
 
@@ -260,7 +261,7 @@
     (when (<= QUERY_MIN_LEN (.length q))
       (let [locat (:locat (sess-params cid) (default-locat))
             sts (->> (search-sts q locat) (take QUERY_MAX))
-            res (for [s sts :let [t (-> s :last :t)]]
+            res (for [s sts :let [t (:t (fresh-last s))]]
                   { :type "article"
                     :id (:_id s)
                     :title (:title s)
