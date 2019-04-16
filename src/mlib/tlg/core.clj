@@ -35,8 +35,9 @@
             ::recur))))
     (catch Exception e
       (do
-        (warn "tg-api-try:" method (.getMessage e))
-        (Thread/sleep SOCKET_ERR_DELAY)))))
+        (let [chat-id (get-in data [:form-params :chat_id])]
+          (warn "tg-api-try:" method chat-id (.getMessage e))
+          (Thread/sleep SOCKET_ERR_DELAY))))))
         ;; ::recur))))
 ;
 
