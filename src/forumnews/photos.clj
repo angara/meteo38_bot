@@ -52,16 +52,20 @@
 
 (defn get-last-mid []
   (try-warn "get-last-mid:"
-    (-> (mc/find-map-by-id (dbc) BOTSTATE_COLL BOTSTATE_ID)
-      (:last_mid 0))))
+    (-> 
+      (mc/find-map-by-id (dbc) BOTSTATE_COLL BOTSTATE_ID)
+      (:last_mid)
+      (or 0))))
 ;
 
 (defn save-last-mid [mid]
-  (try-warn "save-last-mid:"
-    (mc/update (dbc) BOTSTATE_COLL 
-      {:_id BOTSTATE_ID}
-      {:$set {:last_mid mid :ts (tc/now)}}
-      {:upsert true})))
+  (if mid
+    (try-warn "save-last-mid:"
+      (mc/update (dbc) BOTSTATE_COLL 
+        {:_id BOTSTATE_ID}
+        {:$set {:last_mid mid :ts (tc/now)}}
+        {:upsert true}))
+    (warn "save-last-mid: mid has no value")))
 ;
 
 (defn fetch-msgs [last-mid age-limit fetch-limit]
@@ -123,7 +127,7 @@
           msgs (not-empty (fetch-msgs last-mid (:age-limit cfg) (:fetch-limit cfg)))
           msgs (map msg-page msgs)]
       (when msgs
-        (let [max-mid (reduce #(max %1 (:mid %2)) last-mid msgs)]
+        (let [max-mid (reduce #(max %1 (or (:mid %2) 0)) last-mid msgs)]
           (save-last-mid max-mid)
           (doseq [m msgs]
             (update-channel apikey chn m)))))

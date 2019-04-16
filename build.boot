@@ -3,7 +3,7 @@
 ;;
 
 (def project
-  {:name "angara.net/bots" :version "0.9.1"})
+  {:name "angara.net/bots" :version "0.9.3"})
 
 (def jar-main 'bots.main)
 (def jar-file "bots.jar")
@@ -16,39 +16,39 @@
   ;; boot -d boot-deps ancient
   :dependencies
   '[
-    [org.clojure/clojure "1.9.0"]
-    [org.clojure/core.async "0.4.474"]
-    [org.clojure/core.cache "0.6.5"]
+    [org.clojure/clojure "1.10.0"]
+    [org.clojure/core.async "0.4.490"]
+    [org.clojure/core.cache "0.7.2"]
 
     [org.clojure/tools.logging "0.4.0"]
     [ch.qos.logback/logback-classic "1.2.3"]
 
-    [clj-time "0.14.2"]
-    [clj-http "3.7.0"]
+    [clj-time "0.15.1"]
+    [clj-http "3.9.1"]
     [jarohen/chime "0.2.2"]
 
-    [ring/ring-core "1.6.3"]
+    [ring/ring-core "1.7.1"]
     [ring/ring-json "0.4.0"]
     [ring/ring-headers "0.3.0"]
-    [ring/ring-jetty-adapter "1.6.3"]
+    [ring/ring-jetty-adapter "1.7.1"]
 
-    [cheshire "5.8.0"]
-    [compojure "1.6.0"]
+    [cheshire "5.8.1"]
+    [compojure "1.6.1"]
 
     ; [rum "0.10.7"]
     ; [garden "1.3.2"]
-    [mount "0.1.11"]
+    [mount "0.1.16"]
 
-    [com.novemberain/monger "3.1.0"]
+    [com.novemberain/monger "3.5.0"]
 
-    [org.postgresql/postgresql "42.2.0"]
+    [org.postgresql/postgresql "42.2.5"]
 
     ;; https://funcool.github.io/clojure.jdbc/latest/
     [funcool/clojure.jdbc "0.9.0"]
     ;; https://github.com/tomekw/hikari-cp
-    [hikari-cp "2.0.1"]
+    [hikari-cp "2.7.1"]
 
-    [honeysql "0.9.1"]  ; https://github.com/jkk/honeysql
+    [honeysql "0.9.4"]  ; https://github.com/jkk/honeysql
 
     ; [com.draines/postal "2.0.2"]
 
