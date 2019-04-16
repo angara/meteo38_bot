@@ -29,14 +29,15 @@
       (if (:ok res)
         (:result res)
         (do
-          (info "tg-api-try:" method res)
+          (let [chat-id (get-in data [:form-params :chat_id])]
+            (info "tg-api-try:" method chat-id res))
           (when
             (-> res (:error_code) (first) #{\3 \5}) ;; 3xx or 5xx codes
             ::recur))))
     (catch Exception e
       (do
         (let [chat-id (get-in data [:form-params :chat_id])]
-          (warn "tg-api-try:" method chat-id (.getMessage e))
+          (warn "tg-api-try: catch" method chat-id (.getMessage e))
           (Thread/sleep SOCKET_ERR_DELAY))))))
         ;; ::recur))))
 ;
