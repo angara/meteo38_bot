@@ -1,0 +1,7 @@
+{
+  "name": "bots",
+  "script": "./run.sh",
+  "interpreter": "bash",
+  "restart_delay": 1000,
+  "env": {}
+}

@@ -1,10 +1,10 @@
 #!/bin/bash
 
-PROD_HOST="www@ex1"
-PROD_PATH="/www/bots"
-PROD_CONF=${PROD_PATH}"/../conf/bots.edn"
+PROD_HOST="app"
+PROD_PATH="/app/bots"
+# PROD_CONF=${PROD_PATH}"/../conf/bots.edn"
 
-PROD_VAR="/www/bots/var"
+PROD_VAR="/app/files/bots"
 
 JAR="tmp/target/bots.jar"
 
@@ -13,9 +13,11 @@ ssh $PROD_HOST mkdir -p ${PROD_VAR}/photos
 # scp run stop ${PROD_HOST}:${PROD_PATH}
 
 chmod g+r $JAR
-scp $JAR ${PROD_HOST}:${PROD_PATH}
+scp run.sh pm2.json $JAR ${PROD_HOST}:${PROD_PATH}
 # scp conf/prod.edn ${PROD_HOST}:${PROD_CONF}
 
-ssh $PROD_HOST $PROD_PATH/stop
+# pm2 start pm2.json
+# ssh $PROD_HOST $PROD_PATH/stop
+ssh ${PROD_HOST} pm2 restart bots
 
 #.
