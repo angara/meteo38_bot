@@ -26,9 +26,8 @@
 
 
 (defn -main [& _]
-  
-  (info "start:" @build-info)
   (setup-logger! #{"meteo38-bot.*"} :debug)
+  (info "start:" @build-info)
 
   (if-let [rc (-> (System/getenv "CONFIG_EDN") slurp edn/read-string)]
     (start (with-args rc))

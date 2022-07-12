@@ -15,6 +15,5 @@
   :start
     (deep-merge
       (edn-resource "config.edn")
-      {:build (edn-resource "build.edn")}
       (args)))
 ;

@@ -52,10 +52,10 @@
 (extend-protocol ISQLType
   ;
   org.joda.time.DateTime
-  (as-sql-type [this conn]
+  (as-sql-type [this _conn]
     (tc/to-sql-time this))
   ;
-  (set-stmt-parameter! [this conn stmt index]
+  (set-stmt-parameter! [this _conn stmt index]
     (.setTimestamp stmt index
       (tc/to-sql-time this))))
 ;
@@ -63,15 +63,15 @@
 (extend-protocol ISQLResultSetReadColumn
   ;
   java.sql.Timestamp
-  (from-sql-type [this conn metadata index]
+  (from-sql-type [this _conn _metadata _index]
     (tc/from-sql-time this))
   ;
   java.sql.Date
-  (from-sql-type [this conn metadata index]
+  (from-sql-type [this _conn _metadata _index]
     (tc/from-sql-date this))
   ;
   java.sql.Time
-  (from-sql-type [this conn metadata index]
+  (from-sql-type [this _conn _metadata _index]
     (org.joda.time.DateTime. this)))
 ;
 

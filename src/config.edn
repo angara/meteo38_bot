@@ -7,16 +7,17 @@
 
   :mdb 
   {
-    :angara { :uri "mongodb://user:pass@localhost:22022/angara"}
-    :meteo  { :uri "mongodb://user:pass@localhost:22022/meteo"}}
+    :angara {:uri "mongodb://user:pass@localhost:22022/angara"}
+    :meteo  {:uri "mongodb://user:pass@localhost:22022/meteo"}
+   }
   
   :psql 
   {
     :jdbc-url "jdbc:postgresql://localhost:5432/angara"
     :username "angara"
-    :password ""}
-  ;      
-  
+    :password ""
+   }
+ 
   :telegram 
   {
     :polling

@@ -39,7 +39,8 @@
    org.slf4j/slf4j-api       {:mvn/version "1.7.36"}
   ;; org.clojure/tools.logging {:mvn/version "1.2.4"}
 
-   cheshire/cheshire  {:mvn/version "5.11.0"}}
+   cheshire/cheshire  {:mvn/version "5.11.0"}
+  }
   
   :paths ["src"]
 
@@ -53,19 +54,22 @@
         org.clojure/tools.namespace {:mvn/version "1.3.0"}
         criterium/criterium         {:mvn/version "0.4.6"}
         integrant/repl              {:mvn/version "0.3.2"}
-      }}
+      }
+    }
 
     :nrepl
     { :extra-deps
       { nrepl/nrepl                 {:mvn/version "0.9.0"}
         cider/cider-nrepl           {:mvn/version "0.28.5"}}
-      :main-opts ["-m" "nrepl.cmdline" "--middleware" "[cider.nrepl/cider-middleware]"]}
+      :main-opts ["-m" "nrepl.cmdline" "--middleware" "[cider.nrepl/cider-middleware]"]
+    }
 
     ;; https://github.com/clojure/tools.build#release-information
     :build 
     {
       :extra-paths ["resources" "target/resources"]
       :deps {io.github.clojure/tools.build {:git/tag "v0.8.3" :git/sha "0d20256"}}
-      :ns-default build}
+      :ns-default build
+    }
   }
 }

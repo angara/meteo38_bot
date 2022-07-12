@@ -6,7 +6,6 @@
     [mount.core :as mount]
     ;
     [meteo38-bot.main :refer [-main]]
-    ;
   ))
 
 
@@ -26,7 +25,12 @@
 
 (comment
 
-  (-main)
+  (try
+    (-main)
+    (catch Exception ex
+      ex
+      )
+    )
 
   (mount/start-with-args ARGS)
 
