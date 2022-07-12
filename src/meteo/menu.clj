@@ -1,12 +1,12 @@
-
 (ns meteo.menu
   (:require
     [clojure.string :as s]
     [mlib.tlg.core :as tg]
-    [meteo.util :refer [apikey cid gmaps-link wd-map]]
+    [meteo.util :refer [apikey cid wd-map]]
     [meteo.db :refer [st-ids]]
-    [meteo.data :refer [get-favs get-subs]]))
-;
+    [meteo.data :refer [get-favs get-subs]]
+  ))
+
 
 (defn sect-favs [ids]
   (when-let [sts (not-empty (st-ids ids [:_id :title :ll]))]
@@ -27,7 +27,7 @@
       "\n")))
 ;
 
-(defn cmd-menu [msg par]
+(defn cmd-menu [msg _par]
   (let [cid (cid msg)
         ids (get-favs cid)
         sc  (count (get-subs cid))]
@@ -45,5 +45,3 @@
              [{:text (str "Рассылки (" sc ")") :callback_data "subs"}]]}})))
               ; {:text "Добавить"    :callback_data "adds"}]]}})))
 ;
-
-;;.

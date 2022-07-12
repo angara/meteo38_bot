@@ -1,16 +1,16 @@
-
 (ns meteo.data
   (:import
     [com.mongodb DuplicateKeyException])
   (:require
+    [taoensso.timbre :refer [debug warn]]
     [mount.core :refer [defstate]]
     [clj-time.core :as tc]
     [monger.collection :as mc]
     [monger.query :as mq]
-    [mlib.log :refer [debug warn try-warn]]
-    ;
-    [bots.db :refer [dbc]]))
-;
+    [mlib.core :refer [try-warn]]
+    [meteo38-bot.db :refer [dbc]]
+  ))
+
 
 (def USER_TRACK_LL_NUM 1000)
 
@@ -113,6 +113,7 @@
 
 (defn get-subs [cid & [ord]]
   (try-warn "get-subs"
+    #_{:clj-kondo/ignore [:invalid-arity]}
     (mq/with-collection (dbc) SUBS-COLL
       (mq/find (if ord {:cid cid :ord ord} {:cid cid}))
       (mq/sort (array-map :ord 1)))))
@@ -138,16 +139,12 @@
 
 (defn subs-hhmm [hhmm]
   (try-warn "subs-hhmm"
+    #_{:clj-kondo/ignore [:invalid-arity]}
     (mq/with-collection (dbc) SUBS-COLL
       (mq/find {:time hhmm :del {:$ne true}}))))
 ;
-
-
-;; ;; ;; ;; ;;
 
 (defstate data
   :start
     (ensure-indexes))
 ;
-
-;;.

@@ -1,4 +1,3 @@
-
 (ns mlib.psql.conn
   (:require
     [clj-time.coerce :as tc]
@@ -6,9 +5,10 @@
     [jdbc.proto :refer [ISQLType ISQLResultSetReadColumn]]
     [hikari-cp.core :refer [make-datasource]]
     [mount.core :refer [defstate]]
-    [mlib.log :refer [info warn]]
-    [mlib.conf :refer [conf]]))
-;
+    [taoensso.timbre :refer [debug warn]]
+    [mlib.conf :refer [conf]]
+  ))
+
 
 ;; https://github.com/tomekw/hikari-cp/
 (comment
@@ -25,9 +25,10 @@
           :server-name "localhost"
           :port-number 5432})
 
-  (with-open [conn (jdbc/connection ds)]
-    (do-stuff conn)))
-;
+  ;; (with-open [conn (jdbc/connection ds)]
+  ;;   (do-stuff conn))
+  
+  ,)
 
 
 (defstate ds
@@ -91,5 +92,3 @@
 ;   org.joda.time.DateTime
 ;   (sql-value [v]
 ;     (tc/to-sql-time v)))
-
-;;.

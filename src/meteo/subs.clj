@@ -1,20 +1,17 @@
-
 (ns meteo.subs
   (:require
     [clojure.string :as s]
     [clj-time.core :as tc]
     [clj-time.local :refer [local-now]]
+    [taoensso.timbre :refer [debug warn]]
     ;
-    [mlib.log :refer [debug]]
     [mlib.core :refer [to-int]]
-    [mlib.time :refer [hhmm]]
     [mlib.tlg.core :as tg]
     ;
     [meteo.db :refer [st-ids]]
-    [meteo.util :refer [apikey cid gmaps-link inkb wd-map]]
-    [meteo.data :refer
-      [get-favs get-subs subs-add! subs-update! subs-remove!]]))
-;
+    [meteo.util :refer [apikey cid inkb wd-map]]
+    [meteo.data :refer [get-favs get-subs subs-add! subs-update! subs-remove!]]
+  ))
 
 
 (def SUBS-MAX 20)

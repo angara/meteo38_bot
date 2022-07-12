@@ -3,10 +3,10 @@
   (:require
     [clojure.string :as s]
     [jdbc.core :as jdbc]
+    [taoensso.timbre :refer [debug warn]]
     [honeysql.core :as sql]
-    [mlib.log :refer [warn]]
-    [mlib.psql.conn :refer [dbc]]))
-;
+    [mlib.psql.conn :refer [dbc]]
+  ))
 
 
 (defn fetch [sqlmap & [params]]

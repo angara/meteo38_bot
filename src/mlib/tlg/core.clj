@@ -1,10 +1,9 @@
-
 (ns mlib.tlg.core
   (:require
     [clojure.string :refer [escape]]
-    [mlib.log :refer [info warn]]
-    [clj-http.client :as http]))
-;
+    [taoensso.timbre :refer [debug warn]]
+    [clj-http.client :as http]
+  ))
 
 
 (def RETRY_COUNT      5)
@@ -30,17 +29,16 @@
         (:result res)
         (do
           (let [chat-id (get-in data [:form-params :chat_id])]
-            (info "tg-api-try:" method chat-id res))
+            (debug "tg-api-try:" method chat-id res))
           (when
             (-> res (:error_code) (first) #{\3 \5}) ;; 3xx or 5xx codes
             ::recur))))
     (catch Exception e
-      (do
-        (let [chat-id (get-in data [:form-params :chat_id])]
-          (warn "tg-api-try: catch" method chat-id (.getMessage e))
-          (Thread/sleep SOCKET_ERR_DELAY))))))
-        ;; ::recur))))
-;
+      (let [chat-id (get-in data [:form-params :chat_id])]
+        (warn "tg-api-try: catch" method chat-id (.getMessage e))
+        (Thread/sleep SOCKET_ERR_DELAY))
+  )))
+
 
 (defn api [token method params & [{timeout :timeout retry :retry}]]
   (Thread/sleep 20)
@@ -100,7 +98,7 @@
       (catch Exception e
         (warn "get-file:" file-id (.getMessage e))))
     ;
-    (info "get-file - not path for file_id:" file-id)))
+    (debug "get-file - not path for file_id:" file-id)))
 ;
 
 (defn send-file
@@ -121,7 +119,7 @@
           ;
       (if (:ok res)
         (:result res)
-        (info "send-file:" method res)))
+        (warn "send-file:" method res)))
     (catch Exception e
       (warn "send-file:" method (.getMessage e)))))
 ;

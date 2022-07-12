@@ -200,4 +200,7 @@
 ;
 
 
-;;.
+(defmacro try-warn [label & body]
+  `(try ~@body
+        (catch Exception e#
+          (taoensso.timbre/warn ~label e#))))

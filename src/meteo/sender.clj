@@ -1,18 +1,17 @@
-
 (ns meteo.sender
   (:require
     [clj-time.core :as tc]
     [mount.core :refer [defstate]]
+    [taoensso.timbre :refer [debug warn]]
     ;
     [mlib.conf :refer [conf]]
-    [mlib.log :refer [debug warn]]
     [mlib.time :refer [hhmm]]
     [mlib.tlg.core :as tg]
     ;
     [meteo.db :refer [st-ids]]
     [meteo.data :refer [sess-cleanup subs-hhmm]]
-    [meteo.stform :refer [format-st]]))
-;
+    [meteo.stform :refer [format-st]]
+  ))
 
 
 (def week-dayc {0 \0  1 \1  2 \2  3 \3  4 \4  5 \5  6 \6  7 \0})

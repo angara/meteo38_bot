@@ -2,17 +2,15 @@
   (:require
     [clojure.string :as s]
     [clj-time.core :as tc]
+    [taoensso.timbre :refer [debug warn]]
     [monger.collection :as mc]
-    [honeysql.core :as sql]
     [honeysql.helpers :as hs]
     [mlib.conf :refer [conf]]
-    [mlib.core :refer [to-int]]
-    [mlib.log :refer [debug info warn try-warn]]
-    [mlib.time :refer [now-ms]]
+    [mlib.core :refer [try-warn]]
     [mlib.psql.core :refer [fetch]]
-    [mlib.tlg.core :as tg :refer [hesc]]
-    [bots.db :refer [dbc]]))
-;
+    [mlib.tlg.core :as tg]
+    [meteo38-bot.db :refer [dbc]]
+  ))
 
 
 (def MSGS_PER_PAGE 20)
@@ -134,5 +132,3 @@
     (catch Exception e
       (warn "forum-photos:" e))))
 ;
-
-;;.

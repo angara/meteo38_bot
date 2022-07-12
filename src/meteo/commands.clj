@@ -1,18 +1,14 @@
-
 (ns meteo.commands
   (:require
     [clojure.string :refer [trim lower-case] :as s]
     [clj-time.core :as tc]
-    [mount.core :refer [defstate]]
-    ;
-    [mlib.conf :refer [conf]]
-    [mlib.log :refer [warn]]
+    [taoensso.timbre :refer [debug warn]]
     [mlib.tlg.core :as tg]
     ;
     [meteo.db :refer [st-near st-by-id st-find]]
     [meteo.util :refer
       [apikey cid inkb q-st-alive
-       main-buttons locat-ll default-locat default-favs]]
+       main-buttons locat-ll default-locat default-favs fresh-last]]
     [meteo.data :refer
       [ sess-params sess-save
         get-favs favs-add! favs-del!
@@ -20,8 +16,7 @@
     [meteo.menu :refer [cmd-menu]]
     [meteo.subs :refer [cmd-adds cmd-subs on-sbed]]
     [meteo.stform :refer [format-st t-plus]]
-    [meteo.util :refer [fresh-last]]))
-;
+  ))
 
 
 (def HELP_TEXT
@@ -267,7 +262,9 @@
                     :title (:title s)
                     :description 
                       (str (or (:descr s) (:addr s)) "\n"
-                        (if t (str (t-plus t) " \u00b0C" "")))
+                        (if t
+                          (str (t-plus t) " \u00b0C") 
+                          ""))
                     :input_message_content
                       { :message_text (format-st s)
                         :parse_mode "Markdown"
@@ -278,5 +275,3 @@
               :cache_time QUERY_CACHE_TIME
               :results res}))))))
 ;
-
-;;.

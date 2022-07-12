@@ -1,0 +1,73 @@
+;;
+;;  angara.net/meteo38_bot: base config
+;;
+
+{
+  :tz "Asia/Irkutsk"
+
+  :mdb 
+  {
+    :angara { :uri "mongodb://user:pass@localhost:22022/angara"}
+    :meteo  { :uri "mongodb://user:pass@localhost:22022/meteo"}}
+  
+  :psql 
+  {
+    :jdbc-url "jdbc:postgresql://localhost:5432/angara"
+    :username "angara"
+    :password ""}
+  ;      
+  
+  :telegram 
+  {
+    :polling
+    {
+      :sender-sleep 5000
+      :poll-limit   100
+      :poll-timeout 3}}     ;; must be less than socket-timeout!
+
+  :cron 
+  {
+    :meteo 
+    {
+      :offset 30       ;; seconds
+      :interval 900}}
+
+  :forumnews 
+  {
+    :bot            :angara_bot
+    :channel        "@angara_forum"
+    :age-limit      86400    ;; 2+ hours (sec)
+    :fetch-limit    100     ;; 
+    :fetch-interval 600     ;; rescan period (sec)
+    ; :title-length   100
+    ; :text-length    100
+    :topics-per-message 10}
+  ;
+
+  :forumphotos
+  {
+    :bot            :angara_bot
+    :channel        "@angara_photos"
+    :age-limit      86400    ;; 2+ hours (sec)
+    :fetch-limit    5        ;; 
+    :fetch-interval 150}     ;; rescan period (sec)
+  ;
+
+  :bots 
+  {
+    :angara_bot
+    {
+      :name "angara_bot"
+      :apikey nil}          ;; disabled when ampty
+
+    :meteo38bot 
+    {
+      :name "meteo38bot"
+      :apikey nil
+      :sender-sleep 5000
+      :poll-limit 100
+      :poll-timeout 3}     ;; must be less than socket-timeout!
+
+  }
+}
+

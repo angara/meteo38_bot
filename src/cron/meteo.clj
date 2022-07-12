@@ -1,20 +1,19 @@
-
 (ns cron.meteo
   (:require
     [clj-time.core :as t]
     [clj-time.periodic :as tp]
     [chime :refer [chime-at]]
     [mount.core :refer [defstate]]
+    [taoensso.timbre :refer [debug warn]]
     [monger.collection :as mc]
     [monger.query :as mq]
     ;
     [mlib.conf :refer [conf]]
     [mlib.core :refer [to-int to-float]]
-    [mlib.log :refer [debug info warn error]]
     ;
-    [bots.db  :refer [db_meteo]]
-    [meteo.db :refer [DAT_COLL HOURS_COLL]]))
-;
+    [meteo38-bot.db  :refer [db_meteo]]
+    [meteo.db :refer [DAT_COLL HOURS_COLL]]
+  ))
 
 
 (def ONE_HOUR (t/hours 1))
@@ -35,6 +34,8 @@
 
 (defn create-indexes [db]
   (try
+    (mc/create-index db HOURS_COLL
+      (array-map :st 1) {})
     (mc/create-index db HOURS_COLL
       (array-map :hour 1 :st 1) {:unique true})
     (catch Exception e
@@ -58,6 +59,7 @@
 (defn get-last-hour []
   (try
     (->
+      #_{:clj-kondo/ignore [:invalid-arity]}
       (mq/with-collection (db_meteo) HOURS_COLL
         (mq/find {})
         (mq/fields [:hour])
@@ -170,20 +172,20 @@
       (update-st-hour st t0
         (st-aggregate st st_vals)))
     ;;
-    (info "calc-hour: no data - " t0 t1)))
+    (debug "calc-hour: no data - " t0 t1)))
 ;
 
 
 (defn worker [this-hour]
   (if-let [last-hour (get-last-hour)]
     (loop [t0 (t/minus (t/floor last-hour t/hour) ONE_HOUR)]
-      (info "worker last-hour:" last-hour)
+      (debug "worker last-hour:" last-hour)
       (when (t/before? t0 this-hour)
         (let [t1 (t/plus t0 ONE_HOUR)]
           (calc-hour t0 t1)
           (recur t1))))
     ;;
-    (error "worker: unable to get last hour")))
+    (warn "worker: unable to get last hour")))
 ;
 
 (defn start [cnf]
@@ -192,7 +194,7 @@
         pseq      (tp/periodic-seq
                     (t/plus (t/floor (t/now) t/hour) offset)
                     interval)]
-    (info "params:" offset interval)
+    (debug "params:" offset interval)
     (chime-at pseq worker)))
 ;
 
@@ -212,5 +214,3 @@
   :stop
     (stop cron))
 ;
-
-;;.

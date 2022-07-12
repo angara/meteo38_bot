@@ -3,17 +3,18 @@
     [clojure.string :as s]
     [clojure.core.async :refer [thread <!!]]
     [clj-time.core :as tc]
+    [taoensso.timbre :refer [debug warn]]
     [monger.collection :as mc]
     [honeysql.helpers :as hs]
     [mount.core :refer [defstate]]
     [mlib.conf :refer [conf]]
-    [mlib.log :refer [debug info warn try-warn]]
+    [mlib.core :refer [try-warn]]
     [mlib.time :refer [now-ms]]
     [mlib.psql.core :refer [fetch]]
     [mlib.tlg.core :as tg :refer [hesc]]
-    [bots.db :refer [dbc]]
-    [forumnews.photos :refer [forum-photos]]))
-;
+    [meteo38-bot.db :refer [dbc]]
+    [forumnews.photos :refer [forum-photos]]
+  ))
 
 
 (def FETCH-TOPICS 
@@ -136,5 +137,3 @@
   :stop
     (stop-periodical-task forumphotos))
 ;
-
-;;.

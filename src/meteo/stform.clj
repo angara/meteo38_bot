@@ -1,12 +1,11 @@
-
 (ns meteo.stform
   (:import [java.util Locale])
   (:require
-    [clojure.string :as s]
     [clj-time.core :as tc]
     [mlib.time :refer [hhmm ddmmyy]]
-    [meteo.util :refer [md-link gmaps-link meteo-st-link]]))
-;
+    [meteo.util :refer [md-link meteo-st-link]]
+  ))
+
 
 (defn hpa-mmhg [h]
   (when h (/ h 1.3332239)))
@@ -91,5 +90,3 @@
         (when dist (str " \u00A0(" (nf (/ dist 1000)) " км)"))
         "\n"))))
 ;
-
-;;.

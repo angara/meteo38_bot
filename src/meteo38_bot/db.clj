@@ -1,11 +1,9 @@
-
-(ns bots.db
+(ns meteo38-bot.db
   (:require
     [mount.core :refer [defstate]]
-    ;
     [mlib.conf :refer [conf]]
-    [mlib.mdb.conn :refer [connect disconnect]]))
-;
+    [mlib.mdb.conn :refer [connect disconnect]]
+  ))
 
 
 (defstate mdb_angara
@@ -29,5 +27,3 @@
 (defn db_meteo []
   (:db mdb_meteo))
 ;
-
-;;.

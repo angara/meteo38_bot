@@ -2,10 +2,10 @@
 (ns mlib.tlg.poller
   (:require
     [clojure.core.async :refer [>!! chan]]
-    [mlib.log :refer [debug info warn]]
+    [taoensso.timbre :refer [debug warn]]
     [mlib.core :refer [to-int]]
-    [mlib.tlg.core :refer [api]]))
-;
+    [mlib.tlg.core :refer [api]]
+  ))
 
 
 (defn update-loop [run-flag cnf msg-chan]
@@ -23,7 +23,7 @@
           (let [id (-> u :update_id to-int)]
             (if (< last-id id)
               (when-not (>!! msg-chan u)
-                (info "msg-chan closed! exiting loop")
+                (debug "msg-chan closed! exiting loop")
                 (reset! run-flag false))
               (debug "update-dupe:" id))
             (recur id (next updates)))

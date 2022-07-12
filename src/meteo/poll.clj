@@ -1,16 +1,15 @@
-
 (ns meteo.poll
   (:require
+    [taoensso.timbre :refer [debug warn]]
     [mount.core :refer [defstate]]
     ;
     [mlib.conf :refer [conf]]
-    [mlib.log :refer [debug warn]]
     [mlib.core :refer [to-int]]
     [mlib.tlg.core :as tg]
     ;
     [meteo.data :refer [mbot-log]]
-    [meteo.commands :refer [on-message on-callback on-inline]]))
-;
+    [meteo.commands :refer [on-message on-callback on-inline]]
+  ))
 
 
 (def api-error-sleep 3000)

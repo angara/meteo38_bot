@@ -1,10 +1,7 @@
-
 (ns mlib.mdb.util
-  ; (:require
-  ;   [mlib.log :refer [warn]]
-  (:import
-    [org.bson.types ObjectId]))
-;
+  (:import [org.bson.types ObjectId]
+  ))
+
 
 (defn id_id [r]
   (if-let [id (:_id r)]

@@ -1,26 +1,19 @@
-
 (ns meteo.db
   (:require
-    [mount.core :refer [defstate]]
-    ;
+    [taoensso.timbre :refer [debug warn]]
     [monger.core :as mg]
     [monger.collection :as mc]
     [monger.query :as mq]
     [monger.conversion :refer [from-db-object]]
-    ;
-    [mlib.log :refer [warn try-warn]]
-    [mlib.conf :refer [conf]]
-    ;
-    [bots.db :refer [db_meteo]]))
-;
+    [mlib.core :refer [try-warn]]
+    [meteo38-bot.db :refer [db_meteo]]
+  ))
 
 
-(def ST "st")   ;; stations collection
+(def ST_COLL  "st")         ;; stations
+(def DAT_COLL "dat")        ;; meteo data
+(def HOURS_COLL "hours")    ;; houlry aggregates
 
-(def ST_COLL  "st")
-(def DAT_COLL "dat")
-
-(def HOURS_COLL "hours")   ;; houlry aggregates
 (comment
   { :_id  :oid
     :hour "date rounded to hours"
@@ -78,7 +71,7 @@
     (let [res (from-db-object
                 (mg/command (db_meteo)
                   (array-map
-                    :geoNear ST
+                    :geoNear ST_COLL
                     :near {:type "Point" :coordinates ll}
                     :spherical true
                     :query query
@@ -91,7 +84,7 @@
 
 (defn st-by-id [id & [fields]]
   (try-warn "st-by-id:"
-    (mc/find-map-by-id (db_meteo) ST id (or fields []))))
+    (mc/find-map-by-id (db_meteo) ST_COLL id (or fields []))))
 ;
 
 
@@ -99,7 +92,8 @@
   "fetch list of public stations data"
   [q & [fields]]
   (try-warn "st-by-id:"
-    (mq/with-collection (db_meteo) ST
+    #_{:clj-kondo/ignore [:invalid-arity]}
+    (mq/with-collection (db_meteo) ST_COLL
       (mq/find q)
       (mq/fields (or fields []))
       (mq/sort (array-map :title 1)))))
@@ -112,7 +106,5 @@
   [ids & [fields]]
   (when ids
     (try-warn "st-by-id:"
-      (mc/find-maps (db_meteo) ST {:_id {:$in ids} :pub 1} (or fields [])))))
+      (mc/find-maps (db_meteo) ST_COLL {:_id {:$in ids} :pub 1} (or fields [])))))
 ;
-
-;;.

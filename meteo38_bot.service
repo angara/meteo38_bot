@@ -1,0 +1,14 @@
+[Unit]
+Description=Angara.Net meteo38_bot
+After=network.target
+
+[Service]
+User=app
+Group=app
+WorkingDirectory=/app/meteo38_bot
+ExecStart=/app/meteo38_bot/run.sh
+RestartSec=1s
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
