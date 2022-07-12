@@ -19,7 +19,7 @@
    clj-time/clj-time  {:mvn/version "0.15.2"}
    mount/mount {:mvn/version "0.1.16"}
    honeysql/honeysql {:mvn/version "1.0.461"}
-   jarohen/chime {:mvn/version "0.3.3"}
+   jarohen/chime {:mvn/version "0.1.9"} ;; last compatible version!
 
    ;; psql:
    org.postgresql/postgresql         {:mvn/version "42.4.0"}
@@ -37,7 +37,7 @@
    com.taoensso/timbre       {:mvn/version "5.2.1"}
    com.fzakaria/slf4j-timbre {:mvn/version "0.3.21"}
    org.slf4j/slf4j-api       {:mvn/version "1.7.36"}
-  ;; org.clojure/tools.logging {:mvn/version "1.2.4"}
+   org.clojure/tools.logging {:mvn/version "1.2.4"}   ;; for (use-timbre)
 
    cheshire/cheshire  {:mvn/version "5.11.0"}
   }

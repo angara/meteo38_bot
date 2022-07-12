@@ -78,5 +78,5 @@
     (b/uber {:class-dir CLASS_DIR
              :uber-file UBER_FILE
              :basis basis
-             :main APPLICATION})
+             :main MAIN_CLASS})
   ))

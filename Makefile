@@ -17,6 +17,7 @@ build:
 	@clj -T:build uberjar
 
 deploy:
+	scp run.sh meteo38_bot.service angara:/app/meteo38_bot/
 	scp target/meteo38_bot.jar angara:/app/meteo38_bot/
 
 clean:
