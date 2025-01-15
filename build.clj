@@ -1,82 +1,86 @@
 (ns build
+ (:import
+   [java.time LocalDateTime]
+   [java.time.format DateTimeFormatter])  
   (:require 
-    [clojure.string :refer [trim-newline]]
     [clojure.java.io :as io]
     [clojure.tools.build.api :as b]
-  ))
+  ,))
 
 
-(def APPLICATION 'angara/meteo38_bot)
-(def VER_MAJOR 1)
-(def VER_MINOR 1)
-(def MAIN_CLASS 'meteo38-bot.main)
+(def APP_NAME   (System/getenv "APP_NAME"))
+(def VER_MAJOR  (System/getenv "VER_MAJOR"))
+(def VER_MINOR  (System/getenv "VER_MINOR"))
+(def MAIN_CLASS (System/getenv "MAIN_CLASS"))
+
+(def JAR_NAME   (System/getenv "JAR_NAME"))
+
+(def CLJ_SRC    "src")
+(def JAVA_SRC   "java")
+(def TARGET     "target")
+(def CLASSES    "target/classes")
+(def RESOURCES  "resources")
+(def BUILD_INFO "build-info.edn")
 
 
-(def JAVA_SRC   "./java")
-(def TARGET     "./target")
-(def CLASS_DIR  "./target/classes")
-(def RESOURCES  "./resourses")
-(def TARGET_RESOURCES "./target/resources")
-(def VERSION_FILE "./VERSION")
+(defn iso-now ^String []
+  (.format (LocalDateTime/now) DateTimeFormatter/ISO_LOCAL_DATE_TIME))
 
 
 (defn clean [_]
   (b/delete {:path TARGET}))
 
 
-(defn write-build-info [app-ver]
-  (let [bi-file (io/file TARGET_RESOURCES "build-info")]
-    (io/make-parents bi-file)  
-    (spit bi-file app-ver)
-  ))
-
-
 (defn version [_] 
   (format "%s.%s.%s" VER_MAJOR VER_MINOR (b/git-count-revs nil)))
 
 
-(defn write-version [_]
-  (let [ver (version nil)]
-    (println "version:" ver)
-    (spit VERSION_FILE ver)))
+(defn build-info [_]
+  {:appname APP_NAME
+   :version (version nil)
+   :branch (b/git-process {:git-args "branch --show-current"})
+   :commit (b/git-process {:git-args "rev-parse --short HEAD"})
+   :timestamp (iso-now)}
+  ,)
+
+
+(defn write-build-info [build-info]
+  (let [out-file (io/file CLASSES BUILD_INFO)]
+    (io/make-parents out-file)
+    (spit out-file (pr-str build-info))))
 
 
 ;; https://clojure.org/guides/tools_build
 
 (defn javac [{basis :basis}]
   (b/javac {:src-dirs [JAVA_SRC]
-            :class-dir CLASS_DIR
+            :class-dir CLASSES
             :basis (or basis (b/create-basis {:project "deps.edn"}))
-            ; :javac-opts ["-source" "8" "-target" "8"]
-           }))
+            :javac-opts ["-Xlint:-options"]
+            }))
 
 
 (defn uberjar [_]
-  (let [VERSION   (trim-newline (slurp VERSION_FILE))
-        UBER_FILE (format "%s/%s.jar" TARGET (name APPLICATION))
-        app-ver   (str (name APPLICATION) " v" VERSION)
-        basis     (b/create-basis {:project "deps.edn"})
-       ]
+  (let [build-info (build-info nil)
+        uber-file (io/file TARGET JAR_NAME)
+        basis (b/create-basis {:project "deps.edn"})]
 
-    (write-build-info app-ver)
+    (println "build:" build-info) 
+    (write-build-info build-info)
 
-    ;; (b/write-pom {:class-dir CLASS_DIR
-    ;;               :lib APPLICATION
-    ;;               :version VERSION
-    ;;               :basis basis
-    ;;               :src-dirs ["src"]})
+    ;; (javac {:basis basis})
 
-    ; (javac {:basis basis})
-
-    (b/copy-dir {:src-dirs ["src" RESOURCES TARGET_RESOURCES]
-                 :target-dir CLASS_DIR})
-
+    (b/copy-dir {:src-dirs [CLJ_SRC RESOURCES]
+                 :target-dir CLASSES})
+    
     (b/compile-clj {:basis basis
-                    :src-dirs ["src"]
-                    :class-dir CLASS_DIR})
+                    :src-dirs [CLJ_SRC]
+                    :class-dir CLASSES})
 
-    (b/uber {:class-dir CLASS_DIR
-             :uber-file UBER_FILE
-             :basis basis
+    (b/uber {:basis basis
+             :class-dir CLASSES
+             :uber-file (str uber-file)
              :main MAIN_CLASS})
-  ))
+    
+    (println "complete:" (str uber-file))
+    ,))

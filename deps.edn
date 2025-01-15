@@ -1,75 +1,50 @@
 {
-  :deps
-  {org.clojure/clojure       {:mvn/version "1.11.1"}
-   org.clojure/core.async    {:mvn/version "1.5.648"}
-   ;cljc.java-time/cljc.java-time {:mvn/version "0.1.18"}
-  ;;  metosin/jsonista          {:mvn/version "0.3.6"}
-  ;;  metosin/malli             {:mvn/version "0.8.9"}
-  ;;  metosin/reitit-core       {:mvn/version "0.5.18"}
-  ;;  metosin/reitit-ring       {:mvn/version "0.5.18"}
+  :deps {
+         org.clojure/clojure       {:mvn/version "1.12.0"}
+         ; org.clojure/core.async    {:mvn/version "1.7.701"}
+         ; org.clojure/core.cache    {:mvn/version "1.1.234"}
+         org.clojure/core.memoize  {:mvn/version "1.1.266"}
 
-  ;;  javax.servlet/servlet-api {:mvn/version "2.5"}
-  ;;  http-kit/http-kit         {:mvn/version "2.6.0"}
-  ;;  ring/ring-core            {:mvn/version "1.9.5"}
+         ;; https://github.com/dm3/clojure.java-time
+         clojure.java-time/clojure.java-time {:mvn/version "1.4.3"}
+         
+         metosin/jsonista          {:mvn/version "0.3.13"}
+         metosin/malli             {:mvn/version "0.17.0"}
+         http-kit/http-kit         {:mvn/version "2.8.0"}
+         mount/mount               {:mvn/version "0.1.20"}
 
-   ;; https://github.com/juxt/tick
-   ;; tick/tick {:mnv/version "0.5.0-RC6"}
+         ; redis.clients/jedis       {:mvn/version "5.2.0"}
+         ; ring/ring-core            {:mvn/version "1.13.0"}
+         
+         com.novemberain/monger    {:mvn/version "3.6.0"}
 
-   clj-http/clj-http {:mvn/version "3.12.3"}
-   clj-time/clj-time  {:mvn/version "0.15.2"}
-   mount/mount {:mvn/version "0.1.16"}
-   honeysql/honeysql {:mvn/version "1.0.461"}
-   jarohen/chime {:mvn/version "0.1.9"} ;; last compatible version!
+         ;; https://github.com/igrishaev/pg2
+         com.github.igrishaev/pg2-core {:mvn/version "0.1.29"}
+         com.github.igrishaev/pg2-honey {:mvn/version "0.1.29"}
+         com.github.igrishaev/pg2-hugsql {:mvn/version "0.1.29"}
+         ; com.github.igrishaev/pg2-migration {:mvn/version "0.1.15"}
+                  
+         com.taoensso/telemere       {:mvn/version "1.0.0-RC2"}
+         com.taoensso/telemere-slf4j {:mvn/version "1.0.0-RC2"}
+         org.slf4j/slf4j-api         {:mvn/version "2.0.16"}
+         ,}
 
-   ;; psql:
-   org.postgresql/postgresql         {:mvn/version "42.4.0"}
-   ;; com.zaxxer/HikariCP               {:mvn/version "5.0.1"}
-  ;;  com.github.seancorfield/next.jdbc {:mvn/version "1.2.780"}
-  ;;  com.github.seancorfield/honeysql  {:mvn/version "2.2.891"}
-  ;;  migratus/migratus                 {:mvn/version "1.3.7"}
-  ;;  net.postgis/postgis-jdbc          {:mvn/version "2021.1.0"}
+  :paths ["src"] ;; "java
 
-   funcool/clojure.jdbc {:mvn/version "0.9.0"}
-   hikari-cp/hikari-cp {:mvn/version "2.14.0"}
+  :aliases {:dev {:extra-paths ["dev" "resources"]
+                  :extra-deps  {org.clojure/tools.namespace {:mvn/version "1.5.0"}
+                                criterium/criterium         {:mvn/version "0.4.6"}}}
 
-   com.novemberain/monger    {:mvn/version "3.6.0"}
-    ;; logging
-   com.taoensso/timbre       {:mvn/version "5.2.1"}
-   com.fzakaria/slf4j-timbre {:mvn/version "0.3.21"}
-   org.slf4j/slf4j-api       {:mvn/version "1.7.36"}
-   org.clojure/tools.logging {:mvn/version "1.2.4"}   ;; for (use-timbre)
+            ; https://github.com/djblue/portal
+            ; https://practical.li/clojure/data-inspector/portal/            
+            :nrepl {:extra-deps {djblue/portal     {:mvn/version "0.58.5"}
+                                 nrepl/nrepl       {:mvn/version "1.3.1"}
+                                 cider/cider-nrepl {:mvn/version "0.52.0"}}
+                    :main-opts ["-m" "nrepl.cmdline"
+                                "--middleware" "[cider.nrepl/cider-middleware,portal.nrepl/wrap-portal]"]}
 
-   cheshire/cheshire  {:mvn/version "5.11.0"}
-  }
-  
-  :paths ["src"]
-
-  :aliases
-  {
-    :dev
-    {
-      :extra-paths ["dev" "resources"]
-      :extra-deps 
-      {
-        org.clojure/tools.namespace {:mvn/version "1.3.0"}
-        criterium/criterium         {:mvn/version "0.4.6"}
-        integrant/repl              {:mvn/version "0.3.2"}
-      }
-    }
-
-    :nrepl
-    { :extra-deps
-      { nrepl/nrepl                 {:mvn/version "0.9.0"}
-        cider/cider-nrepl           {:mvn/version "0.28.5"}}
-      :main-opts ["-m" "nrepl.cmdline" "--middleware" "[cider.nrepl/cider-middleware]"]
-    }
-
-    ;; https://github.com/clojure/tools.build#release-information
-    :build 
-    {
-      :extra-paths ["resources" "target/resources"]
-      :deps {io.github.clojure/tools.build {:git/tag "v0.8.3" :git/sha "0d20256"}}
-      :ns-default build
-    }
-  }
-}
+            ;; https://github.com/clojure/tools.build#release-information
+            :build   {:extra-paths ["target/resources"]
+                      :deps {io.github.clojure/tools.build {:mvn/version "0.10.6"}}
+                      :ns-default build}}
+  ,}
