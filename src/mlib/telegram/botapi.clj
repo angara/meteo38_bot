@@ -41,27 +41,38 @@
 
 (defn throttle [atom-ms* period-ms]
   (let [now (System/currentTimeMillis)
-        [t0 _] (swap-vals! atom-ms* #(+ (max (or % 0) now) period-ms))
-        sleep-ms (- (+ t0 period-ms) now)]
+        [_ t1] (swap-vals! atom-ms* #(max (+ (or % 0) period-ms) now))
+        sleep-ms (- t1 now)]
     (when (< 0 sleep-ms)
       (Thread/sleep sleep-ms))
     sleep-ms))
 
 
 (comment
+
+  (let [t (atom 0)
+        p 1000
+        now #(System/currentTimeMillis)]
+    (prn (now) @t)
+    (prn ">" (throttle t p))
+    (prn (now) @t)
+    (prn ">" (throttle t p))
+    (prn (now) @t)
+    (prn ">" (throttle t p))
+    (prn (now) @t)
+    (prn "sleep 900") (Thread/sleep 900)
+    (prn ">" (throttle t p))
+    (prn (now) @t)
+    (prn ">" (throttle t p))
+    (prn (now) @t)
+    (prn "sleep 100") (Thread/sleep 100)
+    (prn ">" (throttle t p))
+    (prn (now) @t)
+    (prn "sleep 1000") (Thread/sleep 1000)
+    (prn ">" (throttle t p))
+    (prn (now) @t))
   
-  ;; (do
-  ;;   (prn (throttle :a))  
-  ;;   (prn (throttle :a))
-  ;;   (Thread/sleep 10)
-  ;;   (prn (throttle :a))
-  ;;   (Thread/sleep 20)
-  ;;   (prn (throttle :a))
-  ;;   (Thread/sleep 30)
-  ;;   (prn (throttle :a))
-  ;;   (prn (throttle :a)))
-  
-  ,)
+  ())
 
 
 (defn api-call[token method params 
@@ -179,6 +190,7 @@
       (throw ex))
     (catch Exception ex
       (log! :warn ["get-updates:" (ex-message ex) ex])
+      ;; NOTE: rethrow exception on (-> ex (ex-data) (:status) #{404 403 401}) ;; 429
       (Thread/sleep GET_UPDATES_ERROR_PAUSE)
       nil)))
 
@@ -186,11 +198,10 @@
 (defn seq-updates [token opts]
   (letfn [(safe-inc [n] (if (pos-int? n) (inc n) 0))
           (get-next [[u & rest] last-id]
-                    (if u
-                      (lazy-seq
-                       (cons u (get-next rest (safe-inc (:update_id u)))))
-                      (get-next (get-updates token last-id opts) last-id)
-                      ))]
+                    (lazy-seq
+                     (if u 
+                       (cons u (get-next rest (safe-inc (:update_id u))))
+                       (get-next (get-updates token last-id opts) last-id))))]
     (get-next [] 0)))
 
 
