@@ -2,9 +2,12 @@
   (:require
    [taoensso.telemere :refer [log!]]
    [mount.core :refer [defstate]]
-   [meteobot.telegram.bot :refer [bot-info]]
+   [mlib.telegram.botapi :refer [get-me]]
    ,))
 
+
+;; (def bot-info [token]
+;;   (delay (get-me token)))
 
 
 (defn poller-loop [cfg]
@@ -27,7 +30,7 @@
 
 (defstate poller
   :start (let [cfg nil
-               bot @bot-info
+               ;bot @bot-info
                ]
            (log! ["start poller"])
            (doto (Thread. #(poller-loop cfg)) (.start)))

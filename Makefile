@@ -18,7 +18,7 @@ SHELL = bash
 
 
 dev:
-	set -a && CONFIG_EDN=../conf/dev.edn && clojure -M:dev:nrepl
+	set -a && source .env && clojure -M:dev:nrepl
 
 
 build: clean

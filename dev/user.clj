@@ -1,26 +1,12 @@
 (ns user
   (:require
-    [clojure.edn :as edn]
-    [clojure.tools.namespace.repl :as tnr]
-    [taoensso.timbre :refer [debug]]
-    [mount.core :as mount]
+   [mount.core :as mount]
     ;
-    [meteo38-bot.main :refer [-main]]
-  ))
-
-
-(add-tap #(debug "tap>" %))
-
-(def ARGS 
-  (-> (System/getenv "CONFIG_EDN") (slurp) (edn/read-string)))
-
-
-(defn restart []
-  (mount/stop)
-  (mount/start-with-args ARGS))
-
-(defn reset []
-  (tnr/refresh :after 'user/restart))
+   [meteobot.config :as cfg]
+   [meteobot.main :refer [-main]]
+   ; 
+   [mlib.telegram.botapi :refer [get-me]]
+   ))
 
 
 (comment
@@ -32,13 +18,30 @@
       )
     )
 
-  (mount/start-with-args ARGS)
-
-  (mount/start)
-  (mount/stop)
-
-  (restart)
-
-  (reset)
+  (-> (cfg/make-config)
+      (mount/with-args)
+      (mount/only #{#'cfg/config})
+      (mount/start)
+      )
   
+  (try
+    ;(cfg/validate-config (cfg/env-config))
+    (get-me (-> cfg/config :telegram-apikey))
+    (catch Exception ex ex)
+    )
+  ;;=> {:can_connect_to_business false,
+  ;;    :first_name "meteo38 test bot",
+  ;;    :is_bot true,
+  ;;    :username "meteo38_bot",
+  ;;    :can_read_all_group_messages false,
+  ;;    :supports_inline_queries true,
+  ;;    :id 178313410,
+  ;;    :can_join_groups false,
+  ;;    :has_main_web_app false}
+
+  
+
+  (mount/stop)
+   
   ,)
+

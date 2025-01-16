@@ -14,9 +14,11 @@
 
 
 (defn env-config []
-  {:telegram-apikey (env-str "TELEGRAM_APIKEY")
-   
-   :database-url    (env-str "DATABASE_URL")
+  {:telegram-apikey   (env-str "TELEGRAM_APIKEY")
+   :database-url      (env-str "DATABASE_URL")
+   :meteo-api-url     (env-str "METEO_API_URL", "https://angara.net/meteo/api")
+   :meteo-api-auth    (env-str "METEO_API_AUTH")
+   :meteo-api-timeout (env-int "METEO_API_TIMEOUT" 5000) ;; ms
 
    ;
 ;;    :meteo-http-host    (env-str "METEO_HTTP_HOST" "localhost")
@@ -37,7 +39,10 @@
 (def config-schema
   [:map 
    [:telegram-apikey not-blank]
-   [:database-url not-blank]
+   [:database-url    not-blank]
+   [:meteo-api-url   not-blank]
+   [:meteo-api-auth  not-blank]
+   [:meteo-api-timeout [:and :int [:> 100]]]
    ])
 
 
