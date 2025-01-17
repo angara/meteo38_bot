@@ -36,6 +36,6 @@ clean:
 
 # https://github.com/liquidz/antq/blob/main/CHANGELOG.adoc
 outdated:
-	@(clojure -Sdeps '{:deps {antq/antq {:mvn/version "2.11.1264"}}}' -T antq.core/-main || exit 0)
+	@(clojure -Sdeps '{:deps {antq/antq {:mvn/version #_"RELEASE" "2.11.1264"}}}' -T antq.core/-main || exit 0)
 
 #.

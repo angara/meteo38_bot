@@ -18,9 +18,13 @@
       )
     )
 
+  
   (-> (cfg/make-config)
       (mount/with-args)
-      (mount/only #{#'cfg/config})
+      (mount/only #{#'cfg/config 
+                    #'meteobot.app.serv/bot-info 
+                    #'meteobot.app.serv/poller
+                    })
       (mount/start)
       )
   
@@ -38,10 +42,8 @@
   ;;    :id 178313410,
   ;;    :can_join_groups false,
   ;;    :has_main_web_app false}
-
   
-
   (mount/stop)
-   
-  ,)
+  
+  )
 

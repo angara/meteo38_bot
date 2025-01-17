@@ -1,22 +1,26 @@
 (ns meteobot.app.serv
   (:require
    [taoensso.telemere :refer [log!]]
-   [mount.core :refer [defstate]]
-   [mlib.telegram.botapi :refer [get-me]]
+   [mount.core :refer [defstate args]]
+   [mlib.telegram.botapi :refer [get-me seq-updates]]
    ,))
 
 
-;; (def bot-info [token]
-;;   (delay (get-me token)))
+(set! *warn-on-reflection* true)
 
 
-(defn poller-loop [cfg]
-  (log! ["poller-loop:" cfg])
+(defn update-handler [upd] 
+  (log! ["update handler:" upd])
+  ;; XXX: !!!
+  )
+
+
+(defn poller-loop [cfg handler]
+  (log! ["start poller-loop"])
   (loop []
     (try
-      
-      nil ;; XXX:!!!
-      
+      (doseq [upd (seq-updates (-> cfg :telegram-apikey) nil)]
+        (handler upd))
       (catch InterruptedException ex
         (log! ["poller-loop interrupted"])
         (throw ex))
@@ -28,12 +32,16 @@
     ))
 
 
+(defstate bot-info
+  :start (get-me (-> (args) (:telegram-apikey))))
+
+
 (defstate poller
-  :start (let [cfg nil
-               ;bot @bot-info
-               ]
-           (log! ["start poller"])
-           (doto (Thread. #(poller-loop cfg)) (.start)))
+  :start (let [cfg (args)]
+           (doto 
+            (Thread. #(poller-loop cfg update-handler))
+            (.start)
+             ))
   :stop (do
           (log! ["stop poller"])
           (.interrupt ^Thread poller)))
