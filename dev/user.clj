@@ -1,7 +1,8 @@
 (ns user
   (:require
    [mount.core :as mount]
-    ;
+   [portal.api :as portal]
+   ;
    [meteobot.config :as cfg]
    [meteobot.main :refer [-main]]
    ; 
@@ -11,6 +12,13 @@
 
 (comment
 
+  (def p (portal/open {:launcher :vs-code}))
+  (add-tap #'portal/submit)
+  
+  (portal/clear)
+
+  (tap> [:test "test"])
+  
   (try
     (-main)
     (catch Exception ex
@@ -27,7 +35,9 @@
                     })
       (mount/start)
       )
-      
+
+  (mount/stop)
+
   (try
     ;(cfg/validate-config (cfg/env-config))
     (get-me (-> cfg/config :telegram-apikey))
@@ -42,8 +52,7 @@
   ;;    :id 178313410,
   ;;    :can_join_groups false,
   ;;    :has_main_web_app false}
-  
-  (mount/stop)
-  
+    
+  ()
   )
 

@@ -184,14 +184,14 @@
   (api-call token :getUpdates {:offset offset :timeout GET_UPDATES_TIMEOUT} opts))
 
 
-(defn seq-updates [token opts]
-  (letfn [(safe-inc [n] (if (pos-int? n) (inc n) 0))
-          (get-next [[u & rest] last-id]
-                    (lazy-seq
-                     (if u 
-                       (cons u (get-next rest (safe-inc (:update_id u))))
-                       (get-next (get-updates token last-id opts) last-id))))]
-    (get-next [] 0)))
+;; (defn seq-updates [token opts]
+;;   (letfn [(safe-inc [n] (if (pos-int? n) (inc n) 0))
+;;           (get-next [[u & rest] last-id]
+;;                     (lazy-seq
+;;                      (if u 
+;;                        (cons u (get-next rest (safe-inc (:update_id u))))
+;;                        (get-next (get-updates token last-id opts) last-id))))]
+;;     (get-next [] 0)))
 
 
 (comment
@@ -205,9 +205,9 @@
   (def token (:telegram-apikey config))
 
   
-  (doseq [u (take 10 (seq-updates token nil))]
-         (prn (:update_id u) (-> u :message :text))
-         )
+  ;; (doseq [u (take 10 (seq-updates token nil))]
+  ;;        (prn (:update_id u) (-> u :message :text))
+  ;;        )
 
   (get-updates token 0 {})
 
