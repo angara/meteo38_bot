@@ -52,3 +52,44 @@
      (get-json {:auth meteo-api-auth :timeout meteo-api-timeout})
      (:stations)
      )))
+
+
+(comment
+  
+  (require '[meteobot.config])
+
+  (def cfg (meteobot.config/make-config))
+
+  (take 3 (active-stations (assoc cfg :lat 52.2 :lon 104.28 :hours 2)))
+  ;;=> ({:publ true,
+  ;;     :last_ts "2025-01-18T23:12:27.251397+08:00",
+  ;;     :elev 520.0,
+  ;;     :title "Ботаника",
+  ;;     :st "botanika7",
+  ;;     :lon 104.277112,
+  ;;     :lat 52.218503,
+  ;;     :descr "Иркутский район, Ботаника, 7",
+  ;;     :distance 2066.8288664879983,
+  ;;     :created_at "2024-06-03T11:39:33.293+08:00"}
+  ;;    {:publ true,
+  ;;     :last_ts "2025-01-18T23:10:04.781172+08:00",
+  ;;     :elev 520.0,
+  ;;     :title "Ершовский",
+  ;;     :st "ershi28",
+  ;;     :lon 104.3187,
+  ;;     :lat 52.2211,
+  ;;     :descr "г. Иркутск, м-н Ершовский, 28",
+  ;;     :distance 3529.554808087678,
+  ;;     :created_at "2024-10-18T10:12:22.95802+08:00"}
+  ;;    {:publ true,
+  ;;     :last_ts "2025-01-18T23:12:25.1823+08:00",
+  ;;     :elev 560.0,
+  ;;     :title "Николов Посад",
+  ;;     :st "npsd",
+  ;;     :lon 104.2486,
+  ;;     :lat 52.228,
+  ;;     :descr "пгт. Маркова, мрн Николов Посад",
+  ;;     :distance 3777.597010349891,
+  ;;     :created_at "2013-02-17T15:40:04.648+09:00"})
+
+  )

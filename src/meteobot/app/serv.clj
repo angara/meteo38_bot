@@ -42,11 +42,13 @@
       (if upd
         (do
           (try
+            ;; (inc :telegram-updates-in)
             (handler ctx upd)
             (catch InterruptedException ex 
               (log! "poller-loop: handler interrupted")
               (throw ex))
             (catch Exception ex
+              ;; (inc :telegram-handler-err)
               (log! {:level :warn :error ex :msg ["update handler exception"]})))
           (recur rest (ensure-int (:update_id upd))))
         (let [updates (try
@@ -55,6 +57,7 @@
                           (log! "poller-loop: get-updates interrupted")
                           (throw ex))
                         (catch Exception ex
+                          ;; (inc :telegram-updates-err)
                           (log! {:level :warn :data (ex-data ex) :msg ["get-updates exception" ex]})
                           (Thread/sleep ^long GET_UPDATES_ERROR_PAUSE)
                           nil))]

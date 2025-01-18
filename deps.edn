@@ -15,8 +15,11 @@
 
          ; redis.clients/jedis       {:mvn/version "5.2.0"}
          ; ring/ring-core            {:mvn/version "1.13.0"}
-         
-         com.novemberain/monger    {:mvn/version "3.6.0"}
+
+         ;; https://github.com/clj-commons/iapetos
+         clj-commons/iapetos {:mvn/version "0.1.14"}
+
+         com.novemberain/monger {:mvn/version "3.6.0"}
 
          ;; https://github.com/igrishaev/pg2
          com.github.igrishaev/pg2-core {:mvn/version "0.1.29"}
