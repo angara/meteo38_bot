@@ -1,16 +1,15 @@
 (ns mlib.telegram.botapi
   (:require
    [clojure.string :as str]
-   [taoensso.telemere :refer [log!]]
    [org.httpkit.client :as http]
    [jsonista.core :as json]
    ,))
 
 
 (def CONNECTION_TIMEOUT 8000)
+(def LONG_POLLING_TIMEOUT 8000)
 
-(def GET_UPDATES_TIMEOUT 5)  ;; 5 seconds
-(def GET_UPDATES_ERROR_PAUSE 8000)
+(def GET_UPDATES_TIMEOUT 5)  ;; 5 seconds - less than long polling timeout
 
 (def TELEGRAM_BOT_API_BASE_URL "https://api.telegram.org/bot")
 (def TELEGRAM_BOT_FILE_URL "https://api.telegram.org/file/bot")
@@ -87,28 +86,26 @@
              :connect-timeout timeout 
              :timeout timeout
              }]
-    (try
-      (loop [n retry]
-        (let [{:keys [status body error]} @(http/request req)]
-          (if (= 200 status)
+    (loop [n retry]
+      (let [{:keys [status body error]} @(http/request req)]
+        (if (= 200 status)
+          (try
             (-> body
                 (json/read-value json/keyword-keys-object-mapper)
                 (:result))
-            (if (and (< 0 n)
-                     (or
-                      (not status)
-                      (-> status (str) (first) #{\3 \5})))
-              (do
-                (prn "retry")
-                (Thread/sleep retry-sleep)
-                (recur (dec n)))
-              (throw
-               (ex-info "api-call: failed" {:status status :method method :body body} error))))))
-      (catch InterruptedException ex
-        (throw ex))
-      (catch Exception ex
-        (throw 
-         (ex-info (str "api-call exception: " (ex-message ex)) {:method method} ex))))))
+            (catch Exception ex
+              (throw 
+               (ex-info "api-call: malformed body" {:method method :body body} ex))))
+          (if (and (< 0 n)
+                   (or
+                    (not status)
+                    (-> status (str) (first) #{\3 \5})))
+            (do
+              (Thread/sleep retry-sleep)
+              (recur (dec n)))
+            (throw
+             (ex-info "api-call: retry failed" {:status status :method method :body body} error))))))
+    ))
 
 
 (defn send-text [token chat-id text]
@@ -184,15 +181,7 @@
 
 
 (defn get-updates [token offset opts]
-  (try
-    (api-call token :getUpdates {:offset offset :timeout GET_UPDATES_TIMEOUT} opts)
-    (catch InterruptedException ex
-      (throw ex))
-    (catch Exception ex
-      (log! :warn ["get-updates:" (ex-message ex) ex])
-      ;; NOTE: rethrow exception on (-> ex (ex-data) (:status) #{404 403 401}) ;; 429
-      (Thread/sleep GET_UPDATES_ERROR_PAUSE)
-      nil)))
+  (api-call token :getUpdates {:offset offset :timeout GET_UPDATES_TIMEOUT} opts))
 
 
 (defn seq-updates [token opts]
@@ -225,6 +214,4 @@
   ;; https://t.me/meteo38bot?start=webauth_123123
 
   ,)
-
-
 

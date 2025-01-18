@@ -22,12 +22,12 @@
   (-> (cfg/make-config)
       (mount/with-args)
       (mount/only #{#'cfg/config 
-                    #'meteobot.app.serv/bot-info 
+                    ;; #'meteobot.app.serv/bot-info 
                     #'meteobot.app.serv/poller
                     })
       (mount/start)
       )
-  
+      
   (try
     ;(cfg/validate-config (cfg/env-config))
     (get-me (-> cfg/config :telegram-apikey))

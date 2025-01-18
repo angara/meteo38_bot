@@ -2,38 +2,64 @@
   (:require
    [taoensso.telemere :refer [log!]]
    [mount.core :refer [defstate args]]
-   [mlib.telegram.botapi :refer [get-me seq-updates]]
+   [mlib.telegram.botapi :refer [get-me get-updates LONG_POLLING_TIMEOUT send-text]]
    ,))
 
 
 (set! *warn-on-reflection* true)
 
 
-(defn update-handler [upd] 
+(defn update-handler [{apikey :apikey} upd] 
   (log! ["update handler:" upd])
+  (let [message (:message upd)
+        chat-id (-> message :chat :id)
+        text (-> message :text)
+        ]
   ;; XXX: !!!
-  )
+    (let [rc (send-text apikey chat-id (str ">" text))]
+      (log! ["rc:" rc])
+      )
+  ))
+
+
+(def GET_UPDATES_ERROR_PAUSE 4000)
+
+
+(defn- ensure-int ^long [n]
+  (if (int? n) n 
+      (do
+        (log! :warn ["value is not intteger:" n])
+        0)))
 
 
 (defn poller-loop [cfg handler]
-  (log! ["start poller-loop"])
-  (loop []
-    (try
-      (doseq [upd (seq-updates (-> cfg :telegram-apikey) nil)]
-        (handler upd))
-      (catch InterruptedException ex
-        (log! ["poller-loop interrupted"])
-        (throw ex))
-      (catch Exception ex
-        (log! {:level :warn :error ex :msg ["poller-loop exception"]})
-        (Thread/sleep 3000)
-        ))
-    (recur)
-    ))
-
-
-(defstate bot-info
-  :start (get-me (-> (args) (:telegram-apikey))))
+  (let [apikey (:telegram-apikey cfg)
+        bot-info (get-me apikey)
+        ctx {:apikey apikey :bot-name (:username bot-info)}
+        poll-opts {:timeout LONG_POLLING_TIMEOUT}]
+    (log! ["start poller-loop for:" (select-keys bot-info [:username :id])])
+    (loop [[upd & rest] nil last-id 0]
+      (if upd
+        (do
+          (try
+            (handler ctx upd)
+            (catch InterruptedException ex 
+              (log! "poller-loop: handler interrupted")
+              (throw ex))
+            (catch Exception ex
+              (log! {:level :warn :error ex :msg ["update handler exception"]})))
+          (recur rest (ensure-int (:update_id upd))))
+        (let [updates (try
+                        (get-updates apikey (inc last-id) poll-opts)
+                        (catch InterruptedException ex 
+                          (log! "poller-loop: get-updates interrupted")
+                          (throw ex))
+                        (catch Exception ex
+                          (log! {:level :warn :data (ex-data ex) :msg ["get-updates exception" ex]})
+                          (Thread/sleep ^long GET_UPDATES_ERROR_PAUSE)
+                          nil))]
+          (recur updates last-id))
+        ,))))
 
 
 (defstate poller
