@@ -10,9 +10,12 @@
    ))
 
 
-(comment
+(set! *warn-on-reflection* true)
 
-  (def p (portal/open {:launcher :vs-code}))
+
+(comment
+  
+  (def p (portal/open))
   (add-tap #'portal/submit)
   
   (portal/clear)
@@ -52,7 +55,25 @@
   ;;    :id 178313410,
   ;;    :can_join_groups false,
   ;;    :has_main_web_app false}
-    
+  
   ()
   )
 
+
+(import '[java.security SecureRandom])
+
+(def ^ThreadLocal thread-local-secure-random
+  (ThreadLocal/withInitial #(SecureRandom.)))
+
+(defn random-bytes [size]
+  (let [buffer (byte-array size)
+        srnd ^SecureRandom (.get thread-local-secure-random)]
+    (.nextBytes srnd buffer)
+    buffer))
+
+(comment
+  
+  (random-bytes 4)
+  ;;=> [-109, 84, 26, 107]
+
+  ,)

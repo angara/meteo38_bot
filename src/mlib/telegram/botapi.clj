@@ -74,12 +74,12 @@
   ())
 
 
-(defn api-call[token method params 
-               {:keys [timeout retry retry-sleep]
+(defn api-call[method params 
+               {:keys [apikey timeout retry retry-sleep]
                 :or {timeout CONNECTION_TIMEOUT
                      retry RETRY_HTTP_COUNT
                      retry-sleep RETRY_HTTP_SLEEP}}]
-  (let [req {:url (api-url token method)
+  (let [req {:url (api-url apikey method)
              :method :post
              :headers {"Content-Type" "application/json"}
              :body (json/write-value-as-bytes params)
@@ -108,31 +108,31 @@
     ))
 
 
-(defn send-text [token chat-id text]
-  (api-call token :sendMessage {:chat_id chat-id :text text} nil))
+(defn send-text [cfg chat-id text]
+  (api-call :sendMessage {:chat_id chat-id :text text} cfg))
 
 
-(defn send-md [token chat-id text]
-  (api-call token :sendMessage {:chat_id chat-id :text text :parse_mode "Markdown"} nil))
+(defn send-md [cfg chat-id text]
+  (api-call :sendMessage {:chat_id chat-id :text text :parse_mode "Markdown"} cfg))
 
 
-(defn send-html [token chat-id text]
-  (api-call token :sendMessage {:chat_id chat-id :text text :parse_mode "HTML"} nil))
+(defn send-html [cfg chat-id text]
+  (api-call :sendMessage {:chat_id chat-id :text text :parse_mode "HTML"} cfg))
 
 
-(defn send-message [token chat-id params]
-  (api-call token :sendMessage 
-            (assoc params :chat_id chat-id) nil))
+(defn send-message [cfg chat-id params]
+  (api-call :sendMessage 
+            (assoc params :chat_id chat-id) cfg))
 
 
-(defn file-path [token file-id]
+(defn file-path [cfg file-id]
   ;; {:file_id "..." :file_size 999 :file_path "dir/file.ext"}
   (:file_path
-    (api-call token :getFile {:file_id file-id} nil)))
+    (api-call :getFile {:file_id file-id} cfg)))
 
 
-(defn get-me [token]
-  (api-call token :getMe {} nil))
+(defn get-me [cfg]
+  (api-call :getMe {} cfg))
 
 
 ;; (defn get-file [token file-id & {timeout :timeout}]
@@ -180,8 +180,8 @@
 ;; ;
 
 
-(defn get-updates [token offset opts]
-  (api-call token :getUpdates {:offset offset :timeout GET_UPDATES_TIMEOUT} opts))
+(defn get-updates [offset cfg]
+  (api-call :getUpdates {:offset offset :timeout GET_UPDATES_TIMEOUT} cfg))
 
 
 ;; (defn seq-updates [token opts]
@@ -209,9 +209,8 @@
   ;;        (prn (:update_id u) (-> u :message :text))
   ;;        )
 
-  (get-updates token 0 {})
+  (get-updates 0 {:apikey token})
 
   ;; https://t.me/meteo38bot?start=webauth_123123
 
   ,)
-

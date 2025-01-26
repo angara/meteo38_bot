@@ -2,6 +2,7 @@
   (:require
    [clojure.java.io :as io]
    [clojure.edn :as edn]
+   [java-time.api :as jt]
    [malli.core :as m]
    [malli.error :as me]
    [mount.core :refer [defstate args]]
@@ -19,6 +20,8 @@
    :meteo-api-url     (env-str "METEO_API_URL", "https://angara.net/meteo/api")
    :meteo-api-auth    (env-str "METEO_API_AUTH")
    :meteo-api-timeout (env-int "METEO_API_TIMEOUT" 5000) ;; ms
+   ;
+   :timezone (jt/zone-id (env-str "TIMEZONE" "Asia/Irkutsk"))
 
    ;
 ;;    :meteo-http-host    (env-str "METEO_HTTP_HOST" "localhost")

@@ -1,54 +1,45 @@
-(ns meteobot.app.dispatch)
+(ns meteobot.app.dispatch
+  (:require
+   [meteobot.app.inbound :as in]
+   ))
 
 
-
-(defn message-priv [ctx message]
-  
-  (prn "priv message:" message)
-  )
-
-(defn message-group [ctx message]
-  (prn "group-message")
-
-  )
-
-(defn void-handler [ctx data]
-  (prn "void:" data)
-  )
-
-
-(def type-handler-map
+(def PRIVATE_HANDLERS_MAP 
   {
-   :message [message-priv message-group]
-   :edited_message []
-  })
+   :message #'in/message
+   :edited_message nil
+   :callback_query nil
+   })
 
+
+;; (def GROUP_HANDLERS_MAP
+;;   {})
+
+;; (def SUPERGROUP_HANDLERS_MAP
+;;   {})
+
+;; (def CHANNEL_HANDLERS_MAP
+;;   {})
+
+
+(defn handler-by-type [update-type chat-type]
+  (case chat-type
+    "private"    (get PRIVATE_HANDLERS_MAP update-type)
+    ;; "group"      (get GROUP_HANDLERS_MAP update-type)
+    ;; "supergroup" (get SUPERGROUP_HANDLERS_MAP update-type)
+    ;; "channel"    (get CHANNEL_HANDLERS_MAP update-type)
+    nil
+    ))
 
 
 (defn router [ctx upd]
   (let [[u t] (keys upd)
-        utype (if (= :update_id u) t u)
-        data (get upd utype)
-        [priv-h group-h] (type-handler-map utype)]
-    (if (:is_private data)
-      (if priv-h
-        (priv-h ctx data)
-        (do 
-          ;; inc unhandled
-          )
-        )
-      (if group-h
-        (group-h ctx data)
-        (do
-          ;; inc unhandled
-          )
-        )
-      )
-    ))
-
-
-(comment
-  
-  (router {} {:update_id 1 :message {}})
-
-  ,)
+        update-type (if (= :update_id u) t u)
+        data (get upd update-type)
+        chat-type (-> data :chat :type)
+        handler (handler-by-type update-type chat-type)
+        ]
+    (if handler
+      (handler ctx data)
+      (in/unhandled ctx upd)
+      ,)))

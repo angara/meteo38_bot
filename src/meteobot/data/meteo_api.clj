@@ -1,4 +1,4 @@
-(ns meteobot.app.data.meteo-api
+(ns meteobot.data.meteo-api
   (:import [java.net URLEncoder])
   (:require
    [clojure.string :as str]
@@ -44,14 +44,22 @@
   )
 
 
-(defn active-stations [{:keys [meteo-api-url meteo-api-auth meteo-api-timeout lat lon hours]}]
-  ;; lat=52.28&lon=104.28&last-hours=2
-  (let [qs (join-qs {:lat lat :lon lon :hours hours})]
-    (-> 
-     (str meteo-api-url (str "/active-stations?" qs))
-     (get-json {:auth meteo-api-auth :timeout meteo-api-timeout})
-     (:stations)
-     )))
+;; lat=52.28&lon=104.28&last-hours=2
+
+(defn active-stations [{:keys [lat lon hours]} 
+                       {:keys [meteo-api-url meteo-api-auth meteo-api-timeout]}]
+  (-> 
+   (str meteo-api-url "/active-stations?" (join-qs {:lat lat :lon lon :hours hours}))
+   (get-json {:auth meteo-api-auth :timeout meteo-api-timeout})
+   (:stations)
+   ))
+
+
+(defn station-info [st {:keys [meteo-api-url meteo-api-auth meteo-api-timeout]}]
+  (->
+   (str meteo-api-url "/station-info?" (join-qs {:st st}))
+   (get-json {:auth meteo-api-auth :timeout meteo-api-timeout})
+   ))
 
 
 (comment
@@ -60,7 +68,39 @@
 
   (def cfg (meteobot.config/make-config))
 
-  (take 3 (active-stations (assoc cfg :lat 52.2 :lon 104.28 :hours 2)))
+  (station-info "uiii" cfg)
+  ;;=> {:closed_at nil,
+  ;;    :publ true,
+  ;;    :last_ts "2025-01-25T19:00:00+08:00",
+  ;;    :elev 495.0,
+  ;;    :title "Иркутский аэропорт",
+  ;;    :note nil,
+  ;;    :st "uiii",
+  ;;    :lon 104.366972,
+  ;;    :lat 52.267288,
+  ;;    :descr "г. Иркутск, ул. Ширямова, 101",
+  ;;    :last
+  ;;    {:g_delta nil,
+  ;;     :w_ts "2025-01-25T19:00:00+08:00",
+  ;;     :w 3.0,
+  ;;     :d_delta 0.0,
+  ;;     :p_ts "2025-01-25T19:00:00+08:00",
+  ;;     :t_delta 0.0,
+  ;;     :g 14.0,
+  ;;     :b_ts "2025-01-25T19:00:00+08:00",
+  ;;     :g_ts "2025-01-13T14:00:00+08:00",
+  ;;     :d_ts "2025-01-25T19:00:00+08:00",
+  ;;     :b 80.0,
+  ;;     :t_ts "2025-01-25T19:00:00+08:00",
+  ;;     :d -28.0,
+  ;;     :t -20.0,
+  ;;     :w_delta 0.0,
+  ;;     :p 986.0,
+  ;;     :p_delta 0.0},
+  ;;    :created_at "2004-10-10T21:00:00+09:00"}
+
+
+  (take 3 (active-stations {:lat 52.2 :lon 104.28 :hours 2} cfg))
   ;;=> ({:publ true,
   ;;     :last_ts "2025-01-18T23:12:27.251397+08:00",
   ;;     :elev 520.0,
