@@ -125,6 +125,11 @@
             (assoc params :chat_id chat-id) cfg))
 
 
+(defn send-location [cfg chat-id params] ;; latitude, longitude
+  (api-call :sendLocation
+            (assoc params :chat_id chat-id) cfg))
+
+
 (defn file-path [cfg file-id]
   ;; {:file_id "..." :file_size 999 :file_path "dir/file.ext"}
   (:file_path

@@ -160,6 +160,8 @@
     ,))
 
 
+;; https://en.wikipedia.org/wiki/List_of_emojis
+;; https://unicode.org/emoji/charts/full-emoji-list.html
 
 (defn st-info [{:keys [st title descr elev last dist last_ts]}]
   (let [{:keys [t t_ts t_delta
@@ -178,9 +180,9 @@
             (when v_w (str v_w "\n"))
             "\n"
             "<a href=\"" (meteo-st-link st) "\">" (hesc descr) "</a>\n"
-            (when elev (str "<i>высота " (int elev) " м</i>\n"))
+            "/map_" st "📍" (when elev (str "(" (int elev) " м)"))
             "\n"
-
+            "\n"
             (when dist (str "\n \u00A0(" (float1 (/ dist 1000)) " км), "))
             (when last_ts (str "'" (last-dt (ts->dt last_ts))))
             
