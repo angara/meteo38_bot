@@ -140,6 +140,15 @@
   (api-call :getMe {} cfg))
 
 
+;; https://core.telegram.org/bots/api#setmycommands
+(defn set-my-commands [cfg commands scope language_code]
+  (api-call :setMyCommands 
+            (cond-> {:commands commands} 
+              scope (assoc :scope scope)
+              language_code (assoc :language_code language_code)) 
+            cfg))
+
+
 ;; (defn get-file [token file-id & {timeout :timeout}]
 ;;   (if-let [path (file-path token file-id)]
 ;;     (try

@@ -7,6 +7,7 @@
    [meteobot.main :refer [-main]]
    ; 
    [mlib.telegram.botapi :refer [get-me]]
+   [meteobot.app.command :as cmd]
    ))
 
 
@@ -15,6 +16,12 @@
 
 (comment
   
+  (def cf {:apikey (:telegram-apikey cfg/config)})
+
+  (try
+    (cmd/setup-menu-commands cf)
+    (catch Exception ex ex))
+
   (def p (portal/open))
   (add-tap #'portal/submit)
   

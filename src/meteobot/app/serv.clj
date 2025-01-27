@@ -2,8 +2,9 @@
   (:require
    [taoensso.telemere :refer [log!]]
    [mount.core :refer [defstate args]]
-   [mlib.telegram.botapi :refer [get-me get-updates LONG_POLLING_TIMEOUT]]
+   [mlib.telegram.botapi  :refer [get-me get-updates LONG_POLLING_TIMEOUT]]
    [meteobot.app.dispatch :refer [router]]
+   [meteobot.app.command :refer [setup-menu-commands]]
    ,))
 
 
@@ -26,6 +27,7 @@
         cfg {:apikey apikey 
              :bot-name (:username bot-info)}
         poll-opts (assoc cfg :timeout LONG_POLLING_TIMEOUT)]
+    (setup-menu-commands cfg)
     (log! ["start poller-loop for:" (select-keys bot-info [:username :id])])
     (loop [[upd & rest] nil last-id 0]
       (if upd

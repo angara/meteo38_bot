@@ -1,7 +1,7 @@
 (ns meteobot.app.command
   (:require
    [clojure.string :as str]
-   [mlib.telegram.botapi :refer [send-text send-message send-html send-location]]
+   [mlib.telegram.botapi :refer [send-message send-html send-location set-my-commands]]
    [meteobot.data.store :refer [station-info]]
    [meteobot.app.fmt :as fmt :refer [main-buttons BTN_FAVS_TEXT]]
    ,))
@@ -37,18 +37,17 @@
 (defn stinfo [cfg {chat :chat} st]
   (if-let [stinfo (station-info st)]
     (send-message cfg (:id chat) (fmt/st-info stinfo))
-    (send-html cfg (:id chat)
-               (str "Станция не найдена!\n⚠️ <b>" st "</b>"))))
+    (send-html cfg (:id chat) (str "Станция не найдена!\n⚠️ <b>" st "</b>"))))
 
 
 (defn stmap [cfg {chat :chat} st]
   (if-let [stinfo (station-info st)]
     (send-location cfg (:id chat) 
                    {:latitude (:lat stinfo) :longitude (:lon stinfo)
-                    :reply_markup
-                    [[{:text (:title st) :url (fmt/meteo-st-link st)}]]})
-    (send-html cfg (:id chat)
-               (str "Станция не найдена!\n⚠️ <b>" st "</b>"))))
+                    :reply_markup {:inline_keyboard
+                                   [[{:text (str "📈 " (:title stinfo)) 
+                                      :url (fmt/meteo-st-link st)}]]}})
+    (send-html cfg (:id chat) (str "Станция не найдена!\n⚠️ <b>" st "</b>"))))
 
 
 (defn start [cfg {chat :chat :as msg} st]
@@ -83,6 +82,10 @@
   )
 
 
+(defn active [cfg msg _]
+  
+  )
+
 
 (def command-map
   {"start"  start
@@ -90,6 +93,7 @@
    "stinfo" stinfo
    "map"    stmap
    "favs"   favs
+   "active" active
    ,})
 
 
@@ -112,3 +116,16 @@
     (on-location cfg msg location)
     true
     ))
+
+
+(def MENU_COMMANDS 
+  [
+   {:command "help"   :description "Краткая справка"}
+   {:command "active" :description "Актвные станции"}
+   {:command "favs"   :description "Избранное"}
+   {:command "subs"   :description "Подписки"}
+   ])
+
+
+(defn setup-menu-commands [cfg]
+  (set-my-commands cfg MENU_COMMANDS nil nil))

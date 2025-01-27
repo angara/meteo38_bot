@@ -175,12 +175,13 @@
     {:text (str
             "🔹 <b>" (hesc title) "</b>\n"
             "\n"
-            (when v_t (str v_t "\n"))
-            (when v_p (str v_p "\n"))
-            (when v_w (str v_w "\n"))
+            (when v_t (str "   " v_t "\n"))
+            (when v_p (str "   " v_p "\n"))
+            (when v_w (str "   " v_w "\n"))
             "\n"
-            "<a href=\"" (meteo-st-link st) "\">" (hesc descr) "</a>\n"
-            "/map_" st "📍" (when elev (str "(" (int elev) " м)"))
+            "📈 " "<a href=\"" (meteo-st-link st) "\">" (hesc descr) "</a>\n"
+            ; "📍" 
+            "📌 " "/map_" st  (when elev (str " (" (int elev) " м)"))
             "\n"
             "\n"
             (when dist (str "\n \u00A0(" (float1 (/ dist 1000)) " км), "))
@@ -189,11 +190,12 @@
             "\n")
      :parse_mode "HTML"
      :link_preview_options {:is_disabled true}
+     :reply_markup main-buttons
      })
   
   )
 
-
+;; station-info
   ;;=> {:closed_at nil,
   ;;    :publ true,
   ;;    :last_ts "2025-01-25T19:45:40.793883+08:00",
@@ -213,30 +215,3 @@
   ;;     :p_delta -0.21887092358349491},
   ;;    :created_at "2013-02-17T15:40:04.648+09:00"}
 
-
-;❗️
-;; (defn format-st [st]
-;;   (when (and st (:pub st))
-;;     (let [data  (:last st)
-;;           dist  (:dist st)
-;;           ts    (:ts data)
-;;           gl    (meteo-st-link (:_id st))
-;;           fresh (tc/minus (tc/now) (tc/minutes 70))]
-;;       (str
-;;        "*" (:title st) "*\n"
-;;        (if (and ts (tc/after? ts fresh))
-;;          (str
-;;           (format-t (:t data))
-;;           (format-h (:h data))
-;;           (format-p (:p data))
-;;           (format-wind (:w data) (:g data) (:b data))
-;;           (format-water (:wt data) (:wl data)))
-;;          (str "- нет данных -\n"))
-;;         ;
-;;        (when-let [d (:descr st)]
-;;          (str (md-link d gl) "\n"))
-;;        (when-let [a (:addr st)]
-;;          (str (md-link a gl) "\n"))
-;;        "'" (tmf ts)
-;;        (when dist (str " \u00A0(" (nf (/ dist 1000)) " км)"))
-;;        "\n"))))
