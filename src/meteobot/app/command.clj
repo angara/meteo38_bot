@@ -1,8 +1,10 @@
 (ns meteobot.app.command
   (:require
    [clojure.string :as str]
+   [taoensso.telemere :refer [log!]]
    [mlib.telegram.botapi :refer [send-message send-html send-location set-my-commands]]
-   [meteobot.data.store :refer [station-info]]
+   [meteobot.data.store :refer 
+    [station-info active-stations set-user-location get-user-location]]
    [meteobot.app.fmt :as fmt :refer [main-buttons BTN_FAVS_TEXT]]
    ,))
 
@@ -65,12 +67,13 @@
                  }))
 
 
-(defn on-location [cfg msg location]
-  (prn "location:" location) ;; XXX: !!!
+(defn on-location [cfg {chat :chat} location]
+  (log! ["location:" {:chat-id (:id chat) :location location}])
+  (set-user-location (:id chat) location)
+
+  
   
   )
-
-
 
 
 (defn favs [cfg msg _]
@@ -82,8 +85,12 @@
   )
 
 
-(defn active [cfg msg _]
-  
+(defn active [cfg {chat :chat} _]
+  (let [sts (active-stations 52.27 104.27 3)]
+    (doseq [st sts]
+      (send-message cfg (:id chat) (fmt/st-info st))
+      )
+    )
   )
 
 

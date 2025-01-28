@@ -49,7 +49,7 @@
 (defn active-stations [{:keys [lat lon hours]} 
                        {:keys [meteo-api-url meteo-api-auth meteo-api-timeout]}]
   (-> 
-   (str meteo-api-url "/active-stations?" (join-qs {:lat lat :lon lon :hours hours}))
+   (str meteo-api-url "/active-stations?" (join-qs {:lat lat :lon lon :last-hours hours}))
    (get-json {:auth meteo-api-auth :timeout meteo-api-timeout})
    (:stations)
    ))

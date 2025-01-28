@@ -1,5 +1,6 @@
 (ns meteobot.data.store
   (:require
+   [clojure.core.cache.wrapped :as cache]
    [clojure.core.memoize :as memo]
    [meteobot.data.meteo-api :as mapi]
    [meteobot.config :refer [config]]
@@ -46,3 +47,28 @@
   ;;     :p_delta -0.21887092358349491},
   ;;    :created_at "2013-02-17T15:40:04.648+09:00"}
   ())
+
+
+;; XXX:!!! 5 min ?
+(def user-location* (cache/ttl-cache-factory {} :ttl 10000))
+
+
+(defn set-user-location [user-id location]
+  (swap! user-location* assoc user-id location))
+
+
+(defn get-user-location [user-id]
+  (cache/lookup user-location* user-id))
+
+
+(comment
+  
+  user-location*
+  
+  (set-user-location 1 :a)
+  (set-user-location 2 :b)
+  
+  (get-user-location 1)
+  (get-user-location 2)
+
+  ,)

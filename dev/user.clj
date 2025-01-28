@@ -21,21 +21,7 @@
   (try
     (cmd/setup-menu-commands cf)
     (catch Exception ex ex))
-
-  (def p (portal/open))
-  (add-tap #'portal/submit)
   
-  (portal/clear)
-
-  (tap> [:test "test"])
-  
-  (try
-    (-main)
-    (catch Exception ex
-      ex
-      )
-    )
-
   
   (-> (cfg/make-config)
       (mount/with-args)
@@ -63,8 +49,10 @@
   ;;    :can_join_groups false,
   ;;    :has_main_web_app false}
   
-  ()
-  )
+  (def p (portal/open))
+  (add-tap #'portal/submit)
+
+  ())
 
 
 (import '[java.security SecureRandom])

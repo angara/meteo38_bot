@@ -40,7 +40,8 @@
 
 
 (defn hpa-mmhg [h]
-  (when h (/ h 1.3332239)))
+  (when h 
+    (/ h 1.3332239)))
 
 
 (defn wind-rhumb [b]
@@ -139,23 +140,23 @@
 
 (defn format-t [t t-delta]
   (when t
-    (let [arr (cond
-                (> t-delta 0.8) " ↑"
-                (< t-delta -0.8) " ↓"
-                :else nil
-                )]
-      (str "<b>" (float1plus t) arr "</b> \u00b0C"))
+    (let [arr (when t-delta 
+                (cond
+                  (> t-delta 0.8) " ↑"
+                  (< t-delta -0.8) " ↓"
+                  :else nil))]
+      (str "<b>" (float1plus t) arr "</b> <i>\u00b0C</i>"))
     ,))
 
 
 (defn format-p [p]
   (when p
-    (str "<b>" (int (hpa-mmhg p)) "</b> мм.рст")))
+    (str "<b>" (int (hpa-mmhg p)) "</b> <i>мм.рст</i>")))
 
 
 (defn format-wind [w g b]
   (when w
-    (str "<b>" (int w) (when (and g (not= w g)) (str "-" (int g))) "</b> м/с"
+    (str "<b>" (int w) (when (and g (not= w g)) (str "-" (int g))) "</b> <i>м/с</i>"
          (when-let [r (wind-rhumb b)] (str " (<b>" r "</b>)")))
     ,))
 
@@ -163,7 +164,7 @@
 ;; https://en.wikipedia.org/wiki/List_of_emojis
 ;; https://unicode.org/emoji/charts/full-emoji-list.html
 
-(defn st-info [{:keys [st title descr elev last dist last_ts]}]
+(defn st-info [{:keys [st title descr elev last distance last_ts]}]
   (let [{:keys [t t_ts t_delta
                 p p_ts
                 w g b w_ts g_ts]} last
@@ -173,20 +174,19 @@
               (format-wind w (when (fresh? g_ts) g) b))
         ]
     {:text (str
-            "🔹 <b>" (hesc title) "</b>\n"
+            "🔹 <b>" (hesc title) "</b>"  
+            (when last_ts (str "  <i>'" (last-dt (ts->dt last_ts)) "</i>"))
             "\n"
+            "\n"
+            (when-not (or v_t v_p v_w) "⚠️ нет актуальных данных\n")
             (when v_t (str "   " v_t "\n"))
             (when v_p (str "   " v_p "\n"))
             (when v_w (str "   " v_w "\n"))
             "\n"
             "📈 " "<a href=\"" (meteo-st-link st) "\">" (hesc descr) "</a>\n"
             ; "📍" 
-            "📌 " "/map_" st  (when elev (str " (" (int elev) " м)"))
-            "\n"
-            "\n"
-            (when dist (str "\n \u00A0(" (float1 (/ dist 1000)) " км), "))
-            (when last_ts (str "'" (last-dt (ts->dt last_ts))))
-            
+            "📌 " "/map_" st  (when elev (str "  ^" (int elev) " м"))
+            (when distance (str ",  (" (int (/ distance 1000)) " км)"))
             "\n")
      :parse_mode "HTML"
      :link_preview_options {:is_disabled true}
