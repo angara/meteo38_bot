@@ -93,6 +93,15 @@
     (float1 x)))
 
 
+(defn float6 [x]
+  (->
+   (doto (NumberFormat/getNumberInstance Locale/ROOT)
+     (.setMinimumFractionDigits 1)
+     (.setMaximumFractionDigits 6)
+     (.setGroupingUsed false))
+   (.format x)))
+
+
 (comment
   
   (float1 1.0)
@@ -184,7 +193,6 @@
             (when v_w (str "   " v_w "\n"))
             "\n"
             "📈 " "<a href=\"" (meteo-st-link st) "\">" (hesc descr) "</a>\n"
-            ; "📍" 
             "📌 " "/map_" st  (when elev (str "  ^" (int elev) " м"))
             (when distance (str ",  (" (int (/ distance 1000)) " км)"))
             "\n")

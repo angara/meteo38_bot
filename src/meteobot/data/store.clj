@@ -49,8 +49,8 @@
   ())
 
 
-;; XXX:!!! 5 min ?
-(def user-location* (cache/ttl-cache-factory {} :ttl 10000))
+;; XXX:!!! 5 min ? (* 5 60 1000)
+(def user-location* (cache/ttl-cache-factory {} :ttl 30000))
 
 
 (defn set-user-location [user-id location]
