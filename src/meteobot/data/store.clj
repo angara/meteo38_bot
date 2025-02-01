@@ -99,3 +99,27 @@
   (tap> ["user-fav-del:" user-id st])
   (swap! FAVS* disj st)
   )
+
+
+; - - - - - - - - - -
+
+(defn user-subs [user-id]
+  ;; XXX: !!!
+  (list )  
+  )
+
+
+(defn user-sub-add [user-id sub]
+  ;; XXX: !!!
+  ;; return sub-id
+  )
+
+
+(defn user-sub-del [user-id sub-id]
+  ;; XXX: !!!
+  )
+
+
+(defn subs-for-time [wday hhmm]
+  ;; XXX: !!!
+  )

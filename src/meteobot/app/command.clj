@@ -44,12 +44,10 @@
   ())
 
 
-
-
 (defn stinfo [cfg {{chat-id :id} :chat} st]
   (if-let [stinfo (store/station-info st)]
     (let [favs (store/user-favs chat-id)
-          msg (-> (fmt/st-info stinfo)
+          msg (-> (fmt/st-info stinfo false)
                   (assoc :reply_markup (fmt/kbd-fav-subs st (favs st))))]
       (botapi/send-message cfg chat-id msg))
     (botapi/send-html cfg chat-id 
@@ -66,6 +64,9 @@
     (botapi/send-html cfg (:id chat) (str "Станция не найдена!\n⚠️ <b>" st "</b>"))))
 
 
+; - - - - - - - - - -
+
+;; XXX: !!!
 (defn start [cfg {chat :chat :as msg} st]
   (botapi/send-message cfg (:id chat)
                 {:text "start text stub\n\nTODO: full version"
@@ -74,6 +75,7 @@
     (stinfo cfg msg st)))
 
 
+;; XXX: !!!
 (defn help [cfg {chat :chat} _]
   (botapi/send-message cfg (:id chat) 
                 {:text "help text"
@@ -83,17 +85,17 @@
 
 ; - - - - - - - - - -
 
+(defn update-favs [st-list user-id]
+  (let [favs (store/user-favs user-id)]
+    (map 
+      #(if (favs (:st %)) (assoc % :is-fav true) %) 
+      st-list)
+    ))
+
+
 (defn active-stations-for-location [location]
   (when location
     (store/active-stations (:latitude location) (:longitude location) ACTIVE_HOURS)))
-
-
-(defn set-inline-keyboard [cfg chat-id msg-id kbd]
-  (botapi/send cfg :editMessageReplyMarkup {:chat_id chat-id :message_id msg-id :reply_markup kbd}))
-
-
-(defn clear-keyboard [cfg chat-id msg-id]
-  (botapi/send cfg :editMessageReplyMarkup {:chat_id chat-id :message_id msg-id :reply_markup {}}))
 
 
 (defn next-keyboard [prefix offset]
@@ -122,9 +124,14 @@
         [page rest] (split-at NEAR_PAGE_SIZE st-list)
         more-kbd (when (seq rest) (next-keyboard "near" NEAR_PAGE_SIZE))
         ]
-    (doseq [msg (next-messages page fmt/st-info more-kbd)]
+    (doseq [msg (next-messages (update-favs page chat-id) #(fmt/st-info % true) more-kbd)]
       (botapi/send-message cfg chat-id msg))
     ,))
+
+
+(defn near [cfg {{chat-id :id} :chat :as msg} _]
+  (when-let [location (store/get-user-location chat-id)]
+    (on-location cfg msg location)))
 
 
 (defn cb-near-next [cfg 
@@ -140,9 +147,9 @@
       (when-not location
         (log! ["cb-next-near: user location missing"]))
       
-      (clear-keyboard cfg chat-id msg-id)
-
-      (doseq [msg (next-messages page fmt/st-info more-kbd)]
+      (botapi/edit-reply-markup cfg chat-id msg-id {})
+      
+      (doseq [msg (next-messages (update-favs page chat-id) #(fmt/st-info % true) more-kbd)]
         (botapi/send-message cfg chat-id msg))
       ,)
     ;;
@@ -166,7 +173,7 @@
         kbd-more (when (seq rest) (next-keyboard "active" ACTIVE_PAGE_SIZE))
         ]
     (->> 
-     (active-list-message page kbd-more)
+     (active-list-message (update-favs page chat-id) kbd-more)
      (botapi/send-message cfg chat-id)
      ,)))
 
@@ -179,9 +186,9 @@
             st-list (active-stations-for-location location)
             [page rest] (->> st-list (drop n) (split-at ACTIVE_PAGE_SIZE))
             kbd-more (when (seq rest) (next-keyboard "active" (+ n ACTIVE_PAGE_SIZE)))]
-        (clear-keyboard cfg chat-id msg-id)
+        (botapi/edit-reply-markup cfg chat-id msg-id {})
         (->>
-         (active-list-message page kbd-more)
+         (active-list-message (update-favs page chat-id) kbd-more)
          (botapi/send-message cfg chat-id)))        
       ;;      
       (log! :warn ["cb-active-next: invalid offset" cbk])
@@ -199,14 +206,12 @@
               {{{chat-id :id} :chat msg-id :message_id} :message :as cbk}
               [_ add-del st & _]
               ]
-  (tap> [add-del st])
   (case add-del
     "add" (store/user-fav-add chat-id st)
     "del" (store/user-fav-del chat-id st)
     (log! :warn ["cb-fav: wrong add-del parameter" cbk]))
   (let [favs (store/user-favs chat-id)]
-    (tap> ["favs:" favs])
-    (set-inline-keyboard cfg chat-id msg-id (fmt/kbd-fav-subs st (favs st)))
+    (botapi/edit-reply-markup cfg chat-id msg-id (fmt/kbd-fav-subs st (favs st)))
     ))
 
 
@@ -216,6 +221,7 @@
   {"start"  start
    "help"   help
    "info"   stinfo
+   "near"   near
    "map"    stmap
    "favs"   favs
    "active" active
@@ -265,6 +271,7 @@
    {:command "active" :description "Актвные станции"}
    {:command "favs"   :description "Избранное"}
    {:command "subs"   :description "Подписки"}
+   {:command "near"   :description "Рядом"}
    {:command "help"   :description "Краткая справка"}
    ])
 

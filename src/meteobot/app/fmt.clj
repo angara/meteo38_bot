@@ -191,7 +191,7 @@
 ;; https://en.wikipedia.org/wiki/List_of_emojis
 ;; https://unicode.org/emoji/charts/full-emoji-list.html
 
-(defn st-info [{:keys [st title descr elev last distance last_ts]}]
+(defn st-info [{:keys [st title descr elev last distance last_ts is-fav]} show-info-link]
   (let [{:keys [t t_ts t_delta
                 p p_ts
                 w g b w_ts g_ts]} last
@@ -202,7 +202,9 @@
         ]
     {:text (str
             "🔹 <b>" (hesc title) "</b>"  
-            (when last_ts (str "  <i>'" (last-dt (ts->dt last_ts)) "</i>")) "\n"
+            (when last_ts (str "  <i>'" (last-dt (ts->dt last_ts)) "</i>")) 
+            (when is-fav " ⭐")
+            "\n"
              (hesc descr) "\n"
             "\n"
             "<a href=\"" (meteo-st-link st) "\">"
@@ -214,7 +216,9 @@
             "\n"
             "📌 " "/map_" st  (when elev (str "  ^" (int elev) " м"))
             (when distance (str ",  (" (int (/ distance 1000)) " км)"))
-            "\n")
+            "\n"
+            (when show-info-link (str "ℹ️ /info_" st)) "\n"
+            )
      :parse_mode "HTML"
      :link_preview_options {:is_disabled true}
      :reply_markup main-buttons
@@ -243,10 +247,12 @@
   ;;    :created_at "2013-02-17T15:40:04.648+09:00"}
 
 
-(defn active-list-item [{:keys [st title descr elev distance last_ts]}]
+(defn active-list-item [{:keys [st title descr elev distance last_ts is-fav]}]
   (str
    "🔹 <b>" (hesc title) "</b>"
-   (when last_ts (str "  <i>'" (last-dt (ts->dt last_ts)) "</i>")) "\n"
+   (when last_ts (str "  <i>'" (last-dt (ts->dt last_ts)) "</i>")) 
+   (when is-fav " ⭐")
+   "\n"
    (hesc descr) "\n"
    (when elev (str "^" (int elev) " м"))
    (when distance (str ",  (" (int (/ distance 1000)) " км)"))      
