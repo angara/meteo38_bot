@@ -49,8 +49,9 @@
   ())
 
 
-;; XXX:!!! 5 min ? (* 5 60 1000)
-(def user-location* (cache/ttl-cache-factory {} :ttl 30000))
+;; ont day TTL for user location
+(def user-location* 
+  (cache/ttl-cache-factory {} :ttl (* 24 3600 1000)))
 
 
 (defn set-user-location [user-id location]
@@ -72,3 +73,29 @@
   (get-user-location 2)
 
   ,)
+
+
+(defonce FAVS* (atom #{"uiii" "npsd" "olha" "olha2" "ratseka"}))
+
+
+(defn user-favs [user-id]
+  ;; XXX: !!!
+  ;; cached?
+  (tap> ["user-favs:" user-id])
+  (deref FAVS*)
+  )
+
+
+
+(defn user-fav-add [user-id st]
+  ;; XXX: !!!
+  (tap> ["user-fav-add:" user-id st])
+  (swap! FAVS* conj st)
+  )
+
+
+(defn user-fav-del [user-id st]
+  ;; XXX: !!!
+  (tap> ["user-fav-del:" user-id st])
+  (swap! FAVS* disj st)
+  )

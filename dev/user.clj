@@ -4,7 +4,7 @@
    [portal.api :as portal]
    ;
    [meteobot.config :as cfg]
-   [meteobot.main :refer [-main]]
+   [meteobot.main]
    ; 
    [mlib.telegram.botapi :refer [get-me]]
    [meteobot.app.command :as cmd]

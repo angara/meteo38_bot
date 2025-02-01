@@ -13,6 +13,13 @@
 (set! *warn-on-reflection* true)
 
 
+(def SEQN* (atom 0))
+
+;; NOTE: used to ensure that the kbd is not identical.
+(defn next-seq []
+  (swap! SEQN* inc))
+
+
 (defn meteo-st-link [st-id]
   (str "https://angara.net/meteo/st/" st-id))
 
@@ -170,6 +177,17 @@
     ,))
 
 
+(defn kbd-fav-subs [st is-fav]
+  {:inline_keyboard
+   [[
+     (if is-fav
+       {:text  "⭐️" :callback_data (str "fav:del:" st)}
+       {:text  "➕" :callback_data (str "fav:add:" st)}
+       )
+     {:text "⏰" :callback_data (str "subs:add" st ":_" (next-seq))}
+     ,]]})
+
+
 ;; https://en.wikipedia.org/wiki/List_of_emojis
 ;; https://unicode.org/emoji/charts/full-emoji-list.html
 
@@ -184,15 +202,16 @@
         ]
     {:text (str
             "🔹 <b>" (hesc title) "</b>"  
-            (when last_ts (str "  <i>'" (last-dt (ts->dt last_ts)) "</i>"))
+            (when last_ts (str "  <i>'" (last-dt (ts->dt last_ts)) "</i>")) "\n"
+             (hesc descr) "\n"
             "\n"
-            "\n"
+            "<a href=\"" (meteo-st-link st) "\">"
             (when-not (or v_t v_p v_w) "⚠️ нет актуальных данных\n")
             (when v_t (str "   " v_t "\n"))
             (when v_p (str "   " v_p "\n"))
             (when v_w (str "   " v_w "\n"))
+            "</a>"
             "\n"
-            "📈 " "<a href=\"" (meteo-st-link st) "\">" (hesc descr) "</a>\n"
             "📌 " "/map_" st  (when elev (str "  ^" (int elev) " м"))
             (when distance (str ",  (" (int (/ distance 1000)) " км)"))
             "\n")
@@ -223,3 +242,22 @@
   ;;     :p_delta -0.21887092358349491},
   ;;    :created_at "2013-02-17T15:40:04.648+09:00"}
 
+
+(defn active-list-item [{:keys [st title descr elev distance last_ts]}]
+  (str
+   "🔹 <b>" (hesc title) "</b>"
+   (when last_ts (str "  <i>'" (last-dt (ts->dt last_ts)) "</i>")) "\n"
+   (hesc descr) "\n"
+   (when elev (str "^" (int elev) " м"))
+   (when distance (str ",  (" (int (/ distance 1000)) " км)"))      
+   "\n"
+   ; "📌 " "/map_" st "\n"   
+   "ℹ️ /info_" st
+   "\n"
+   ,))
+
+
+;; 🔖📅⭐️  📝 ⏰
+;; ℹ️
+;; ★ ☆ ⭐
+;; ❌ ✅ ❎ ☑️ ✔️ ✖️ ➕ ➖
