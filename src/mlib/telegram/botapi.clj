@@ -142,6 +142,10 @@
   (api-call :editMessageReplyMarkup {:chat_id chat-id :message_id msg-id :reply_markup kbd} cfg))
 
 
+(defn delete-message [cfg chat-id msg-id]
+  (api-call :deleteMessage {:chat_id chat-id :message_id msg-id} cfg))
+
+
 (defn file-path [cfg file-id]
   ;; {:file_id "..." :file_size 999 :file_path "dir/file.ext"}
   (:file_path
