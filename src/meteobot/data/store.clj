@@ -90,8 +90,10 @@
 (defn user-fav-add [user-id st]
   ;; XXX: !!!
   (tap> ["user-fav-add:" user-id st])
-  (swap! FAVS* conj st)
-  )
+  (if (< (count @FAVS*) 10)
+    (swap! FAVS* conj st)
+    {:error "В избранном максимум 10 элементов!"}
+    ))
 
 
 (defn user-fav-del [user-id st]

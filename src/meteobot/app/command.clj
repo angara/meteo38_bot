@@ -13,8 +13,8 @@
 (def ^:const ACTIVE_PAGE_SIZE 4)
 (def ^:const NEAR_PAGE_SIZE 3)
 
-(def ^:const LAT_0 52.27)
-(def ^:const LNG_0 104.27)
+(def DEFAULT_LOCATION 
+  {:latitude 52.27 :longitude 104.27})
 
 
 (defn parse-command [s]
@@ -44,17 +44,20 @@
   ())
 
 
-(defn stinfo [cfg {{chat-id :id} :chat} st]
+(defn stinfo [cfg 
+              {{chat-id :id} :chat} 
+              {st :param show-buttons :show-buttons 
+               :or {show-buttons true}}]
   (if-let [stinfo (store/station-info st)]
     (let [favs (store/user-favs chat-id)
-          msg (-> (fmt/st-info stinfo false)
-                  (assoc :reply_markup (fmt/kbd-fav-subs st (favs st))))]
+          msg (cond-> (fmt/st-info stinfo false)
+                show-buttons (assoc :reply_markup (fmt/kbd-fav-subs st (favs st))))]
       (botapi/send-message cfg chat-id msg))
     (botapi/send-html cfg chat-id 
-               (str "Станция не найдена!\n⚠️ <b>" st "</b>"))))
+                      (str "Станция не найдена!\n⚠️ <b>" st "</b>"))))
 
 
-(defn stmap [cfg {chat :chat} st]
+(defn stmap [cfg {chat :chat} {st :param}]
   (if-let [stinfo (store/station-info st)]
     (botapi/send-location cfg (:id chat) 
                    {:latitude (:lat stinfo) :longitude (:lon stinfo)
@@ -67,12 +70,12 @@
 ; - - - - - - - - - -
 
 ;; XXX: !!!
-(defn start [cfg {chat :chat :as msg} st]
+(defn start [cfg {chat :chat :as msg} {st :param}]
   (botapi/send-message cfg (:id chat)
                 {:text "start text stub\n\nTODO: full version"
                  :reply_markup fmt/main-buttons})
   (when st
-    (stinfo cfg msg st)))
+    (stinfo cfg msg {:param st})))
 
 
 ;; XXX: !!!
@@ -130,7 +133,8 @@
 
 
 (defn near [cfg {{chat-id :id} :chat :as msg} _]
-  (when-let [location (store/get-user-location chat-id)]
+  (let [location (or (store/get-user-location chat-id) 
+                     DEFAULT_LOCATION)]
     (on-location cfg msg location)))
 
 
@@ -168,7 +172,8 @@
 
 
 (defn active [cfg {{chat-id :id} :chat} _]
-  (let [location (or (store/get-user-location chat-id) {:latitude LAT_0 :longitude LNG_0})
+  (let [location (or (store/get-user-location chat-id) 
+                     DEFAULT_LOCATION)
         [page rest] (split-at ACTIVE_PAGE_SIZE (active-stations-for-location location))
         kbd-more (when (seq rest) (next-keyboard "active" ACTIVE_PAGE_SIZE))
         ]
@@ -182,14 +187,15 @@
                       {{{chat-id :id} :chat msg-id :message_id} :message :as cbk}
                       [_ offset & _]]
     (if-let [n (parse-long offset)]
-      (let [location (or (store/get-user-location chat-id) {:latitude LAT_0 :longitude LNG_0})
+      (let [location (or (store/get-user-location chat-id) 
+                         DEFAULT_LOCATION)
             st-list (active-stations-for-location location)
             [page rest] (->> st-list (drop n) (split-at ACTIVE_PAGE_SIZE))
             kbd-more (when (seq rest) (next-keyboard "active" (+ n ACTIVE_PAGE_SIZE)))]
         (botapi/edit-reply-markup cfg chat-id msg-id {})
         (->>
          (active-list-message (update-favs page chat-id) kbd-more)
-         (botapi/send-message cfg chat-id)))        
+         (botapi/send-message cfg chat-id)))
       ;;      
       (log! :warn ["cb-active-next: invalid offset" cbk])
       ))
@@ -197,17 +203,18 @@
 
 ; - - - - - - - - - -
 
-(defn favs [cfg {{chat-id :id} :chat :as msg} _]
+(defn favs [cfg {{chat-id :id} :chat :as msg} opts]
   (doseq [st (store/user-favs chat-id)]
-    (stinfo cfg msg st)))
+    (stinfo cfg msg (assoc opts :param st))))
 
 
 (defn cb-fav [cfg 
-              {{{chat-id :id} :chat msg-id :message_id} :message :as cbk}
+              {{{chat-id :id} :chat msg-id :message_id} :message cbk-id :id :as cbk}
               [_ add-del st & _]
               ]
   (case add-del
-    "add" (store/user-fav-add chat-id st)
+    "add" (when-let [err-msg (:error (store/user-fav-add chat-id st))]
+            (botapi/answer-callback-text cfg cbk-id err-msg))
     "del" (store/user-fav-del chat-id st)
     (log! :warn ["cb-fav: wrong add-del parameter" cbk]))
   (let [favs (store/user-favs chat-id)]
@@ -231,14 +238,14 @@
 (defn route-command [cfg msg text]
   (when-let [[cmd param] (parse-command text)]
     (when-let [hc (get command-map cmd)]
-      (hc cfg msg param)
+      (hc cfg msg {:param param})
       true
       )))
 
 
 (defn route-text [cfg msg text]
   (condp = text
-    fmt/BTN_FAVS_TEXT (favs cfg msg nil)
+    fmt/BTN_FAVS_TEXT (favs cfg msg {:show-buttons false})
     nil))
 
 

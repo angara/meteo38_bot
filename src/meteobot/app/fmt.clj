@@ -4,6 +4,7 @@
    [java.text NumberFormat]
    )
   (:require
+   [clojure.string :as str]
    [java-time.api :as jt]
    [mlib.telegram.botapi :refer [hesc]]
    [meteobot.config :refer [config]]
@@ -209,10 +210,12 @@
             "\n"
             "<a href=\"" (meteo-st-link st) "\">"
             (when-not (or v_t v_p v_w) "⚠️ нет актуальных данных\n")
-            (when v_t (str "   " v_t "\n"))
-            (when v_p (str "   " v_p "\n"))
-            (when v_w (str "   " v_w "\n"))
+            "  " (->> [v_t v_p v_w] (remove nil?) (str/join ", "))
+            ;; (when v_t (str "   " v_t "\n"))
+            ;; (when v_p (str "   " v_p "\n"))
+            ;; (when v_w (str "   " v_w "\n"))
             "</a>"
+            "\n"
             "\n"
             "📌 " "/map_" st  (when elev (str "  ^" (int elev) " м"))
             (when distance (str ",  (" (int (/ distance 1000)) " км)"))
