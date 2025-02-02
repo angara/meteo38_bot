@@ -128,18 +128,22 @@
 ; - - - - - - - - - -
 
 (defn user-subs [user-id]
+  (sql/user-subs pg/dbc {:user-id user-id}))
+
+
+(defn user-subs-by-id [user-id subs-id]
+  (first (sql/user-subs-by-id pg/dbc {:user-id user-id :subs-id subs-id})))
+
+
+(defn user-subs-create [user-id subs]
+  (first (sql/user-subs-create pg/dbc (assoc subs :user-id user-id))))
+
+
+(defn user-subs-update [user-id sub-id]
   ;; XXX: !!!
-  (list )  
   )
 
-
-(defn user-sub-add [user-id sub]
-  ;; XXX: !!!
-  ;; return sub-id
-  )
-
-
-(defn user-sub-del [user-id sub-id]
+(defn user-subs-delete [user-id sub-id]
   ;; XXX: !!!
   )
 

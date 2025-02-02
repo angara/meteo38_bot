@@ -4,7 +4,8 @@
    [taoensso.telemere :refer [log!]]
    [mlib.telegram.botapi :as botapi]
    [meteobot.data.store :as store]
-   [meteobot.app.fmt :as fmt]
+   [meteobot.app.fmt :as fmt] 
+   [meteobot.app.subs :as subs]
    ,))
 
 
@@ -28,7 +29,7 @@
   (str
    "Этот бот предоставляет информацию с сети автоматических метеостанций"
    " <a href=\"https://meteo38.ru\">meteo38.ru</a>"
-   " и возможность настроить рассылку уведомлений в указаное время по данным сайта."
+   " и возможность настроить рассылку уведомлений в указанное время по данным сайта."
    "\n\n"
    "По кнопке <b>Избранное</b> выводятся последние данные с выбранных метеостанций."
    " Кнопка <b>Рядом</b> использует функцию геолокации для поиска ближайших станций."
@@ -81,7 +82,7 @@
                       (str "Станция не найдена!\n⚠️ <b>" st "</b>"))))
 
 
-(defn stmap [cfg {chat :chat} {st :param}]
+(defn cmd-map [cfg {chat :chat} {st :param}]
   (if-let [stinfo (store/station-info st)]
     (botapi/send-location cfg (:id chat) 
                    {:latitude (:lat stinfo) :longitude (:lon stinfo)
@@ -93,7 +94,7 @@
 
 ; - - - - - - - - - -
 
-(defn start [cfg {chat :chat :as msg} {st :param}]
+(defn cmd-start [cfg {chat :chat :as msg} {st :param}]
   (botapi/send-message cfg (:id chat)
                 {:text START_TEXT
                  :parse_mode "HTML"
@@ -102,7 +103,7 @@
     (stinfo cfg msg {:param st})))
 
 
-(defn help [cfg {{chat-id :id} :chat} _]
+(defn cmd-help [cfg {{chat-id :id} :chat} _]
   (botapi/send-message cfg chat-id
                        {:text HELP_TEXT
                         :parse_mode "HTML"
@@ -162,7 +163,7 @@
     ,))
 
 
-(defn near [cfg {{chat-id :id} :chat :as msg} _]
+(defn cmd-near [cfg {{chat-id :id} :chat :as msg} _]
   (let [location (or (store/get-user-location chat-id) 
                      DEFAULT_LOCATION)]
     (on-location cfg msg location)))
@@ -170,7 +171,7 @@
 
 (defn cb-near-next [cfg 
                     {{{chat-id :id} :chat msg-id :message_id} :message :as cbk} 
-                    [_ offset & _]]
+                    [_ offset]]
   (if-let [n (parse-long offset)]
     (let [location (store/get-user-location chat-id)
           acts (drop n (active-stations-for-location location))
@@ -204,7 +205,7 @@
    ,})
 
 
-(defn active [cfg {{chat-id :id} :chat} _]
+(defn cmd-active [cfg {{chat-id :id} :chat} _]
   (let [location (or (store/get-user-location chat-id) 
                      DEFAULT_LOCATION)
         [page rest] (split-at ACTIVE_PAGE_SIZE (active-stations-for-location location))
@@ -219,7 +220,7 @@
 
 (defn cb-active [cfg
                  {{{chat-id :id} :chat msg-id :message_id} :message}
-                 [_ page-num & _]]
+                 [_ page-num]]
   (let [pgn (or (parse-long page-num) 0)
         offset (* ACTIVE_PAGE_SIZE pgn)
         location (or (store/get-user-location chat-id)
@@ -238,14 +239,14 @@
 
 ; - - - - - - - - - -
 
-(defn favs [cfg {{chat-id :id} :chat :as msg} opts]
+(defn cmd-favs [cfg {{chat-id :id} :chat :as msg} opts]
   (doseq [st (store/user-favs chat-id)]
     (stinfo cfg msg (assoc opts :param st))))
 
 
 (defn cb-fav [cfg 
               {{{chat-id :id} :chat msg-id :message_id} :message cbk-id :id :as cbk}
-              [_ add-del st & _]
+              [_ add-del st]
               ]
   (case add-del
     "add" (when-let [err-msg (:error (store/user-fav-add chat-id st))]
@@ -260,13 +261,14 @@
 ; - - - - - - - - - -
 
 (def command-map
-  {"start"  start
-   "help"   help
+  {"start"  cmd-start
+   "help"   cmd-help
    "info"   stinfo
-   "near"   near
-   "map"    stmap
-   "favs"   favs
-   "active" active
+   "near"   cmd-near
+   "map"    cmd-map
+   "favs"   cmd-favs
+   "subs"   #'subs/cmd-subs
+   "active" cmd-active
    ,})
 
 
@@ -280,7 +282,7 @@
 
 (defn route-text [cfg msg text]
   (condp = text
-    fmt/BTN_FAVS_TEXT (favs cfg msg {:show-buttons false :show-links false :show-descr false})
+    fmt/BTN_FAVS_TEXT (cmd-favs cfg msg {:show-buttons false :show-links false :show-descr false})
     nil))
 
 
@@ -293,10 +295,11 @@
 
 (def callback-map
   {
-   "near_next" #'cb-near-next
-   "active" #'cb-active
-   "fav" #'cb-fav
-   "subs" prn ;; XXX:!!!
+   "near_next" cb-near-next
+   "active"    cb-active
+   "fav"       cb-fav
+   "subs_new"  #'subs/cb-subs-new
+   "subs"      #'subs/cb-subs
    ,})
 
 

@@ -10,7 +10,7 @@ create table meteobot_subs (
     user_id bigint,
     ts      timestamptz not null,
     hhmm    time not null,       -- subs time: 08:10
-    days    varchar(7) not null, -- week days: "01234567"
+    wdays   varchar(7) not null, -- week days: "01234567"
     st      varchar(80) not null -- station name
 );
 
