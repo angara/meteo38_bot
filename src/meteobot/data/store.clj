@@ -2,13 +2,19 @@
   (:require
    [clojure.core.cache.wrapped :as cache]
    [clojure.core.memoize :as memo]
+   [pg.core :refer [with-transaction]]
    [meteobot.data.meteo-api :as mapi]
    [meteobot.config :refer [config]]
+   [meteobot.data.pg :as pg]
+   [meteobot.data.sql :as sql]
    ))
 
 
 (def ^:const ST_ACTIVE_TTL 5000) ;; XXX:!!!
 (def ^:const ST_INFO_TTL   5000) ;; XXX:!!!
+
+
+(def ^:const FAVS_MAX 10)
 
 
 (def active-stations-cached-fn
@@ -75,33 +81,49 @@
   ,)
 
 
-(defonce FAVS* (atom #{"uiii" "npsd" "olha" "olha2" "ratseka"}))
+(defn- get-user-favs [conn user-id] 
+  (-> conn
+      (sql/user-favs {:user-id user-id})
+      (first)
+      (:favs)))
 
 
 (defn user-favs [user-id]
-  ;; XXX: !!!
-  ;; cached?
-  (tap> ["user-favs:" user-id])
-  (deref FAVS*)
-  )
-
+  (get-user-favs pg/dbc user-id))
 
 
 (defn user-fav-add [user-id st]
-  ;; XXX: !!!
-  (tap> ["user-fav-add:" user-id st])
-  (if (< (count @FAVS*) 10)
-    (swap! FAVS* conj st)
-    {:error "В избранном максимум 10 элементов!"}
+  (with-transaction [tx pg/dbc]
+    (let [favs (get-user-favs tx user-id)
+          favs (remove #(= % st) favs)
+          ]
+      (if (< (count favs) FAVS_MAX)
+        (sql/save-favs tx {:user-id user-id 
+                           :favs (-> (remove #(= % st) favs)
+                                     (vec)
+                                     (conj st))
+                           })
+        {:error "В избранном максимум " FAVS_MAX " элементов!"}
+        ))
     ))
 
+(vec '(1 2 3))
 
 (defn user-fav-del [user-id st]
-  ;; XXX: !!!
-  (tap> ["user-fav-del:" user-id st])
-  (swap! FAVS* disj st)
-  )
+  (with-transaction [tx pg/dbc]
+    (let [favs (get-user-favs tx user-id)]
+      (sql/save-favs tx {:user-id user-id :favs (remove #(= % st) favs)})
+      )))
 
+
+(comment
+    
+  (sql/save-favs pg/dbc {:user-id 1 :favs #{"1" "2" "3"}})
+  ;;=> {:inserted 1}
+  (sql/user-favs pg/dbc {:user-id 1})
+  ;;=> [{:favs ["3" "1" "2"], :ts #object[java.time.OffsetDateTime 0x7b012387 "2025-02-02T17:56:53.188355+08:00"], :user_id 1}]
+
+  ,)
 
 ; - - - - - - - - - -
 

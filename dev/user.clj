@@ -28,6 +28,7 @@
       (mount/only #{#'cfg/config 
                     ;; #'meteobot.app.serv/bot-info 
                     #'meteobot.app.serv/poller
+                    #'meteobot.data.pg/dbc
                     })
       (mount/start)
       )

@@ -17,6 +17,28 @@
   {:latitude 52.27 :longitude 104.27})
 
 
+(def START_TEXT
+  (str
+   "Вы подключились к @meteo38bot.\n"
+   "Для получения краткой инструкции используйте команду /help."
+   ))
+
+
+(def HELP_TEXT
+  (str
+   "Этот бот предоставляет информацию с сети автоматических метеостанций"
+   " <a href=\"https://meteo38.ru\">meteo38.ru</a>"
+   " и возможность настроить рассылку уведомлений в указаное время по данным сайта."
+   "\n\n"
+   "По кнопке <b>Избранное</b> выводятся последние данные с выбранных метеостанций."
+   " Кнопка <b>Рядом</b> использует функцию геолокации для поиска ближайших станций."
+   " Из <b>Меню</b> можно воспользоваться остальными командами и управлять рассылками."
+   "\n\n"
+   "Пожелания и сообщения об ошибках пишите в группу - @meteo38"
+   ,))
+
+
+
 (defn parse-command [s]
   (when s
     (when-let [[_ cmd param] (re-matches #"^[/!]([A-Za-z0-9]+)[ _]*(.*)$" s)]
@@ -41,7 +63,7 @@
   (parse-command "!hello 1 2 3")
   ;;=> ["hello" "1 2 3"]
   
-  ())
+  ,)
 
 
 (defn stinfo [cfg 
@@ -49,7 +71,7 @@
               {st :param show-buttons :show-buttons show-links :show-links show-descr :show-descr
                :or {show-buttons true show-links true show-descr true}}]
   (if-let [stinfo (store/station-info st)]
-    (let [favs (store/user-favs chat-id)
+    (let [favs (set (store/user-favs chat-id))
           msg (cond-> (fmt/st-info stinfo 
                                    (cond-> {:show-descr show-descr}
                                      show-links (assoc :show-info-link false :show-map-link true)))
@@ -71,31 +93,27 @@
 
 ; - - - - - - - - - -
 
-;; XXX: !!!
 (defn start [cfg {chat :chat :as msg} {st :param}]
   (botapi/send-message cfg (:id chat)
-                {:text "start text stub\n\nTODO: full version"
+                {:text START_TEXT
+                 :parse_mode "HTML"
                  :reply_markup fmt/main-buttons})
   (when st
     (stinfo cfg msg {:param st})))
 
 
-;; XXX: !!!
-(defn help [cfg {chat :chat} _]
-  (botapi/send-message cfg (:id chat) 
-                {:text "help text\n\nTODO: implement"
-                 :reply_markup fmt/main-buttons
-                 }))
+(defn help [cfg {{chat-id :id} :chat} _]
+  (botapi/send-message cfg chat-id
+                       {:text HELP_TEXT
+                        :parse_mode "HTML"
+                        :reply_markup fmt/main-buttons
+                        }))
 
 
 ; - - - - - - - - - -
 
-(defn set-fav-flag [st-list user-id]
-  (let [favs (store/user-favs user-id)]
-    (map 
-      #(if (favs (:st %)) (assoc % :is-fav true) %) 
-      st-list)
-    ))
+(defn set-fav-flag [st-list favs]
+  (map #(if (favs (:st %)) (assoc % :is-fav true) %) st-list))
 
 
 (defn active-stations-for-location [location]
@@ -135,8 +153,9 @@
   (let [st-list (active-stations-for-location location)
         [page rest] (split-at NEAR_PAGE_SIZE st-list)
         more-kbd (when (seq rest) (next-keyboard "near" NEAR_PAGE_SIZE))
+        favs (set (store/user-favs chat-id))
         ]
-    (doseq [msg (next-messages (set-fav-flag page chat-id) 
+    (doseq [msg (next-messages (set-fav-flag page favs) 
                                #(fmt/st-info % {:show-info-link true :show-map-link true}) 
                                more-kbd)]
       (botapi/send-message cfg chat-id msg))
@@ -158,13 +177,14 @@
           page (take NEAR_PAGE_SIZE acts)
           rest (drop NEAR_PAGE_SIZE acts)
           more-kbd (when (seq rest) (next-keyboard "near" (+ n NEAR_PAGE_SIZE)))
+          favs (set (store/user-favs chat-id))
           ]
       (when-not location
         (log! ["cb-next-near: user location missing"]))
       
       (botapi/edit-reply-markup cfg chat-id msg-id {})
       
-      (doseq [msg (next-messages (set-fav-flag page chat-id) 
+      (doseq [msg (next-messages (set-fav-flag page favs) 
                                  #(fmt/st-info % {:show-info-link true :show-map-link true}) 
                                  more-kbd)]
         (botapi/send-message cfg chat-id msg))
@@ -189,9 +209,10 @@
                      DEFAULT_LOCATION)
         [page rest] (split-at ACTIVE_PAGE_SIZE (active-stations-for-location location))
         kbd (when (seq rest) (prev-next-keyboard "active" nil 1))
+        favs (set (store/user-favs chat-id))
         ]
     (->> 
-     (active-list-message (set-fav-flag page chat-id) kbd)
+     (active-list-message (set-fav-flag page favs) kbd)
      (botapi/send-message cfg chat-id)
      ,)))
 
@@ -201,17 +222,16 @@
                  [_ page-num & _]]
   (let [pgn (or (parse-long page-num) 0)
         offset (* ACTIVE_PAGE_SIZE pgn)
-        location (or (store/get-user-location chat-id) 
+        location (or (store/get-user-location chat-id)
                      DEFAULT_LOCATION)
         st-list (active-stations-for-location location)
         [page rest] (->> st-list (drop offset) (split-at ACTIVE_PAGE_SIZE))
         kbd (prev-next-keyboard "active"
                                 (when (> pgn 0) (dec pgn))
                                 (when (seq rest) (inc pgn)))
-        ]
-    ; (botapi/edit-reply-markup cfg chat-id msg-id {})
+        favs (set (store/user-favs chat-id))]
     (->>
-     (active-list-message (set-fav-flag page chat-id) kbd)
+     (active-list-message (set-fav-flag page favs) kbd)
      (botapi/edit-message cfg chat-id msg-id))
     ,))
 
@@ -232,7 +252,7 @@
             (botapi/answer-callback-text cfg cbk-id err-msg))
     "del" (store/user-fav-del chat-id st)
     (log! :warn ["cb-fav: wrong add-del parameter" cbk]))
-  (let [favs (store/user-favs chat-id)]
+  (let [favs (set (store/user-favs chat-id))]
     (botapi/edit-reply-markup cfg chat-id msg-id (fmt/kbd-fav-subs st (favs st)))
     ))
 
@@ -290,7 +310,7 @@
 
 (def MENU_COMMANDS 
   [
-   {:command "active" :description "Актвные станции"}
+   {:command "active" :description "Активные станции"}
    {:command "favs"   :description "Избранное"}
    {:command "subs"   :description "Подписки"}
    {:command "near"   :description "Рядом"}

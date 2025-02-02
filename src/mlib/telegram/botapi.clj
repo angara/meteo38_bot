@@ -108,10 +108,6 @@
     ))
 
 
-(defn send [cfg method params]
-  (api-call method params cfg))
-
-
 (defn send-text [cfg chat-id text]
   (api-call :sendMessage {:chat_id chat-id :text text} cfg))
 

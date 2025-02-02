@@ -185,7 +185,7 @@
        {:text  "⭐️" :callback_data (str "fav:del:" st)}
        {:text  "➕" :callback_data (str "fav:add:" st)}
        )
-     {:text "⏰" :callback_data (str "subs:add" st ":_" (next-seq))}
+     {:text "⏰" :callback_data (str "subs:add:" st ":_" (next-seq))}
      ,]]})
 
 
