@@ -10,7 +10,7 @@
 
 (def ^:const ACTIVE_HOURS 3)
 
-(def ^:const ACTIVE_PAGE_SIZE 4)
+(def ^:const ACTIVE_PAGE_SIZE 5)
 (def ^:const NEAR_PAGE_SIZE 3)
 
 (def DEFAULT_LOCATION 
@@ -46,11 +46,13 @@
 
 (defn stinfo [cfg 
               {{chat-id :id} :chat} 
-              {st :param show-buttons :show-buttons 
-               :or {show-buttons true}}]
+              {st :param show-buttons :show-buttons show-links :show-links show-descr :show-descr
+               :or {show-buttons true show-links true show-descr true}}]
   (if-let [stinfo (store/station-info st)]
     (let [favs (store/user-favs chat-id)
-          msg (cond-> (fmt/st-info stinfo false)
+          msg (cond-> (fmt/st-info stinfo 
+                                   (cond-> {:show-descr show-descr}
+                                     show-links (assoc :show-info-link false :show-map-link true)))
                 show-buttons (assoc :reply_markup (fmt/kbd-fav-subs st (favs st))))]
       (botapi/send-message cfg chat-id msg))
     (botapi/send-html cfg chat-id 
@@ -81,14 +83,14 @@
 ;; XXX: !!!
 (defn help [cfg {chat :chat} _]
   (botapi/send-message cfg (:id chat) 
-                {:text "help text"
+                {:text "help text\n\nTODO: implement"
                  :reply_markup fmt/main-buttons
                  }))
 
 
 ; - - - - - - - - - -
 
-(defn update-favs [st-list user-id]
+(defn set-fav-flag [st-list user-id]
   (let [favs (store/user-favs user-id)]
     (map 
       #(if (favs (:st %)) (assoc % :is-fav true) %) 
@@ -103,6 +105,14 @@
 
 (defn next-keyboard [prefix offset]
   {:inline_keyboard [[{:text "Ещё..." :callback_data (str prefix "_next:" offset)}]]})
+
+
+(defn prev-next-keyboard [prefix prev-page next-page]
+  (let [btns [(when prev-page
+                {:text "⬅️" :callback_data (str prefix ":" prev-page)})
+              (when next-page
+                {:text "➡️" :callback_data (str prefix ":" next-page)})]]
+    {:inline_keyboard [(remove nil? btns)]}))
 
 
 (defn next-messages [st-list format-fn kbd-more]
@@ -121,13 +131,14 @@
   (log! ["location:" {:chat-id chat-id :location location}])
   (store/set-user-location chat-id location)
   (botapi/send-html cfg chat-id
-             (str "<b>Активные станции</b>\n" 
-                  "📌 " (fmt/float6 latitude) " " (fmt/float6 longitude)))
+             (str "📌 " (fmt/float6 latitude) " " (fmt/float6 longitude)))
   (let [st-list (active-stations-for-location location)
         [page rest] (split-at NEAR_PAGE_SIZE st-list)
         more-kbd (when (seq rest) (next-keyboard "near" NEAR_PAGE_SIZE))
         ]
-    (doseq [msg (next-messages (update-favs page chat-id) #(fmt/st-info % true) more-kbd)]
+    (doseq [msg (next-messages (set-fav-flag page chat-id) 
+                               #(fmt/st-info % {:show-info-link true :show-map-link true}) 
+                               more-kbd)]
       (botapi/send-message cfg chat-id msg))
     ,))
 
@@ -153,7 +164,9 @@
       
       (botapi/edit-reply-markup cfg chat-id msg-id {})
       
-      (doseq [msg (next-messages (update-favs page chat-id) #(fmt/st-info % true) more-kbd)]
+      (doseq [msg (next-messages (set-fav-flag page chat-id) 
+                                 #(fmt/st-info % {:show-info-link true :show-map-link true}) 
+                                 more-kbd)]
         (botapi/send-message cfg chat-id msg))
       ,)
     ;;
@@ -175,30 +188,32 @@
   (let [location (or (store/get-user-location chat-id) 
                      DEFAULT_LOCATION)
         [page rest] (split-at ACTIVE_PAGE_SIZE (active-stations-for-location location))
-        kbd-more (when (seq rest) (next-keyboard "active" ACTIVE_PAGE_SIZE))
+        kbd (when (seq rest) (prev-next-keyboard "active" nil 1))
         ]
     (->> 
-     (active-list-message (update-favs page chat-id) kbd-more)
+     (active-list-message (set-fav-flag page chat-id) kbd)
      (botapi/send-message cfg chat-id)
      ,)))
 
 
-(defn cb-active-next [cfg
-                      {{{chat-id :id} :chat msg-id :message_id} :message :as cbk}
-                      [_ offset & _]]
-    (if-let [n (parse-long offset)]
-      (let [location (or (store/get-user-location chat-id) 
-                         DEFAULT_LOCATION)
-            st-list (active-stations-for-location location)
-            [page rest] (->> st-list (drop n) (split-at ACTIVE_PAGE_SIZE))
-            kbd-more (when (seq rest) (next-keyboard "active" (+ n ACTIVE_PAGE_SIZE)))]
-        (botapi/edit-reply-markup cfg chat-id msg-id {})
-        (->>
-         (active-list-message (update-favs page chat-id) kbd-more)
-         (botapi/send-message cfg chat-id)))
-      ;;      
-      (log! :warn ["cb-active-next: invalid offset" cbk])
-      ))
+(defn cb-active [cfg
+                 {{{chat-id :id} :chat msg-id :message_id} :message}
+                 [_ page-num & _]]
+  (let [pgn (or (parse-long page-num) 0)
+        offset (* ACTIVE_PAGE_SIZE pgn)
+        location (or (store/get-user-location chat-id) 
+                     DEFAULT_LOCATION)
+        st-list (active-stations-for-location location)
+        [page rest] (->> st-list (drop offset) (split-at ACTIVE_PAGE_SIZE))
+        kbd (prev-next-keyboard "active"
+                                (when (> pgn 0) (dec pgn))
+                                (when (seq rest) (inc pgn)))
+        ]
+    ; (botapi/edit-reply-markup cfg chat-id msg-id {})
+    (->>
+     (active-list-message (set-fav-flag page chat-id) kbd)
+     (botapi/edit-message cfg chat-id msg-id))
+    ,))
 
 
 ; - - - - - - - - - -
@@ -245,7 +260,7 @@
 
 (defn route-text [cfg msg text]
   (condp = text
-    fmt/BTN_FAVS_TEXT (favs cfg msg {:show-buttons false})
+    fmt/BTN_FAVS_TEXT (favs cfg msg {:show-buttons false :show-links false :show-descr false})
     nil))
 
 
@@ -259,7 +274,7 @@
 (def callback-map
   {
    "near_next" #'cb-near-next
-   "active_next" #'cb-active-next
+   "active" #'cb-active
    "fav" #'cb-fav
    "subs" prn ;; XXX:!!!
    ,})

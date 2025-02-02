@@ -138,6 +138,10 @@
   (api-call :answerCallbackQuery {:callback_query_id cbk-id :text text} cfg))
 
 
+(defn edit-message [cfg chat-id msg-id params]
+  (api-call :editMessageText (assoc params :chat_id chat-id :message_id msg-id) cfg))
+
+
 (defn edit-reply-markup [cfg chat-id msg-id kbd]
   (api-call :editMessageReplyMarkup {:chat_id chat-id :message_id msg-id :reply_markup kbd} cfg))
 

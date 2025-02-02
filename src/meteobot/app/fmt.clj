@@ -192,7 +192,8 @@
 ;; https://en.wikipedia.org/wiki/List_of_emojis
 ;; https://unicode.org/emoji/charts/full-emoji-list.html
 
-(defn st-info [{:keys [st title descr elev last distance last_ts is-fav]} show-info-link]
+(defn st-info [{:keys [st title descr elev last distance last_ts is-fav]} 
+               {:keys [show-map-link show-info-link show-descr] :or {show-descr true}}]
   (let [{:keys [t t_ts t_delta
                 p p_ts
                 w g b w_ts g_ts]} last
@@ -206,20 +207,18 @@
             (when last_ts (str "  <i>'" (last-dt (ts->dt last_ts)) "</i>")) 
             (when is-fav " ⭐")
             "\n"
-             (hesc descr) "\n"
+            (when show-descr (str (hesc descr) "\n"))
             "\n"
             "<a href=\"" (meteo-st-link st) "\">"
             (when-not (or v_t v_p v_w) "⚠️ нет актуальных данных\n")
             "  " (->> [v_t v_p v_w] (remove nil?) (str/join ", "))
-            ;; (when v_t (str "   " v_t "\n"))
-            ;; (when v_p (str "   " v_p "\n"))
-            ;; (when v_w (str "   " v_w "\n"))
             "</a>"
             "\n"
             "\n"
-            "📌 " "/map_" st  (when elev (str "  ^" (int elev) " м"))
-            (when distance (str ",  (" (int (/ distance 1000)) " км)"))
-            "\n"
+            (when show-map-link
+              (str "📌 " "/map_" st (when elev (str "  ^" (int elev) " м"))
+                   (when distance (str ",  (" (int (/ distance 1000)) " км)"))
+                   "\n"))
             (when show-info-link (str "ℹ️ /info_" st)) "\n"
             )
      :parse_mode "HTML"
@@ -257,11 +256,9 @@
    (when is-fav " ⭐")
    "\n"
    (hesc descr) "\n"
-   (when elev (str "^" (int elev) " м"))
-   (when distance (str ",  (" (int (/ distance 1000)) " км)"))      
-   "\n"
-   ; "📌 " "/map_" st "\n"   
    "ℹ️ /info_" st
+   (when elev (str " ^" (int elev) " м"))
+   (when distance (str ",  (" (int (/ distance 1000)) " км)"))      
    "\n"
    ,))
 
@@ -270,3 +267,4 @@
 ;; ℹ️
 ;; ★ ☆ ⭐
 ;; ❌ ✅ ❎ ☑️ ✔️ ✖️ ➕ ➖
+;; ⬅️ ➡️
