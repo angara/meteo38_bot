@@ -139,13 +139,12 @@
   (first (sql/user-subs-create pg/dbc (assoc subs :user-id user-id))))
 
 
-(defn user-subs-update [user-id sub-id]
-  ;; XXX: !!!
-  )
+(defn user-subs-update [user-id subs-id hhmm wdays]
+  (sql/user-subs-update pg/dbc {:user-id user-id :subs-id subs-id :hhmm hhmm :wdays wdays}))
 
-(defn user-subs-delete [user-id sub-id]
-  ;; XXX: !!!
-  )
+
+(defn user-subs-delete [user-id subs-id]
+  (sql/user-subs-delete pg/dbc {:user-id user-id :subs-id subs-id}))
 
 
 (defn subs-for-time [wday hhmm]

@@ -316,7 +316,7 @@
   [
    {:command "active" :description "Активные станции"}
    {:command "favs"   :description "Избранное"}
-   {:command "subs"   :description "Подписки"}
+   {:command "subs"   :description "Рассылки"}
    {:command "near"   :description "Рядом"}
    {:command "help"   :description "Краткая справка"}
    ])

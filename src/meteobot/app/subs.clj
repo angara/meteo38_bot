@@ -9,7 +9,6 @@
    ,))
 
 
-
 (def ^:const SUBS_MAX 10)
 
 
@@ -22,12 +21,13 @@
    \5 "5️⃣" \6 "6️⃣" \7 "7️⃣" \8 "8️⃣" \9 "9️⃣"
    })
 
+
+; 0️⃣1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣8️⃣9️⃣
+
 ;; ⏩ ⏪ ◀ ▶️ ⬅️ ➡️
 ;; ✅❌🚫❎
 
 (def tf-hhmm (jt/formatter "HH:mm"))
-
-(def tf-hmm (jt/formatter "H:mm"))
 
 
 (defn hhmm->big [hhmm]
@@ -39,9 +39,24 @@
 
 
 (defn fmt-wdays [wds]
-  (when (and wds (not= wds "0123456"))
-    (->> wds (map WDS_MAP) (str/join ","))
-    ))
+  (when (seq wds)
+    (let [wset (set wds)]
+      (str "["
+           (->> "1234560"
+                (filter wset)
+                (map WDS_MAP)
+                (str/join ", "))
+           "]")   
+      ,)))
+
+(comment
+  (fmt-wdays "")
+  ;;=> nil
+  (fmt-wdays "0145")
+  ;;=> "[пн, чт, пт, вс]"
+  (fmt-wdays "21") 
+  ;;=> "[пн, вт]"
+  )
 
 
 (defn msg-subs [subs-id st-info hhmm wdays]
@@ -49,7 +64,7 @@
         tt (hhmm->big hhmm)
         wd-set (set wdays)
         wd-kbd (for [c "1234560"]
-                 {:text (if (wd-set c) (WDS_MAP c) "-")
+                 {:text (if (wd-set c) (WDS_MAP c) "--")
                   :callback_data (str "subs:" subs-id ":wd:" c)})
         ]
     ;; NOTE (title st-info)
@@ -70,7 +85,6 @@
 
 (defn cmd-subs [cfg {{chat-id :id} :chat} _]
   (let [subs-list (store/user-subs chat-id)
-        
         txts (->> subs-list
                   (map (fn [sb]
                          (let [st-info (store/station-info (:st sb))
@@ -82,16 +96,8 @@
                                 "️✏️ " "/sub_" (:subs_id sb)
                                 "\n"
                                 )
-                           )
-                         
-                         ))
-                  )
-        
-        msg {:text (str/join "\n" txts)
-             :parse_mode "HTML"
-             }
-        ]
-    
+                           ,))))
+        msg {:text (str/join "\n" txts) :parse_mode "HTML"}]
     (botapi/send-message cfg chat-id msg)
     ,))
 
@@ -122,8 +128,24 @@
         ;;
           )
       ;;
-        (botapi/answer-callback-text cfg cbk-id (str "Максимальное количество подписок: " SUBS_MAX))
+        (botapi/answer-callback-text cfg cbk-id (str "Максимальное количество рассылок: " SUBS_MAX))
         ))))
+
+
+(defn- wd-toggle [wdays wd]
+  (let [c (first wd)
+        ws (set wdays)
+        wds (if (ws c) (disj ws c) (conj ws c))]
+    (apply str (sort wds))))
+
+(comment
+  (wd-toggle "1234" "1")
+  ;;=> "234"
+  (wd-toggle "1234" "0")
+  ;;=> "01234"
+  (wd-toggle "4321" "2")
+  ;;=> "134"
+  ,)
 
 
 (defn cb-subs [cfg
@@ -133,28 +155,40 @@
   (log! ["cb-subs:" subs-id cmd wd])
 
   (when-let [subs (store/user-subs-by-id chat-id (parse-long subs-id))]
-    (let [update-msg 
+    (let [sub-id (:subs_id subs)
+          hhmm (:hhmm subs)
+          wdays (:wdays subs)
+          update-msg 
           (case cmd
-            "hh-" true
-            "hh+" true 
-            "mm-" true
-            "mm+" true
-
-            "wd" true
-
+            "hh-" (do 
+                    (store/user-subs-update chat-id sub-id (jt/- hhmm (jt/hours 1)) wdays)
+                    true)
+            "hh+" (do
+                    (store/user-subs-update chat-id sub-id (jt/+ hhmm (jt/hours 1)) wdays)
+                    true)
+            "mm-" (do
+                    (store/user-subs-update chat-id sub-id (jt/- hhmm (jt/minutes 10)) wdays)
+                    true)
+            "mm+" (do
+                    (store/user-subs-update chat-id sub-id (jt/+ hhmm (jt/minutes 10)) wdays)
+                    true)
+            "wd" (do 
+                   (store/user-subs-update chat-id sub-id hhmm (wd-toggle wdays wd))
+                   true)
             "ok"  (do
                     (botapi/delete-message cfg chat-id msg-id)
                     false)
             "del" (do
-                    (store/user-subs-delete chat-id (:subs_id subs))
+                    (store/user-subs-delete chat-id sub-id)
                     (botapi/delete-message cfg chat-id msg-id)
                     false)
             (do
               (log! :warn ["cb-subs: unexpected cmd" cbk])
               nil))]
       (when update-msg
-        (let [st-info (store/station-info (:st subs))
-              msg (msg-subs (:subs_id subs) st-info (:hhmm subs) (:wdays subs))]
+        (let [subs (store/user-subs-by-id chat-id sub-id)
+              st-info (store/station-info (:st subs))
+              msg (msg-subs sub-id st-info (:hhmm subs) (:wdays subs))]
           (botapi/edit-message cfg chat-id msg-id msg)
           ,)))))
 
