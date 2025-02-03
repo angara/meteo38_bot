@@ -267,7 +267,7 @@
    "near"   cmd-near
    "map"    cmd-map
    "favs"   cmd-favs
-   "subed"  #'subs/cmd-subs-edit
+   "sub"    #'subs/cmd-subs-edit
    "subs"   #'subs/cmd-subs
    "active" cmd-active
    ,})

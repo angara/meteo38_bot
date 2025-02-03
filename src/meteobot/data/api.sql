@@ -11,7 +11,7 @@ update set ts=CURRENT_TIMESTAMP, favs=:favs;
 -- :name user-subs :? :*
 select subs_id, user_id, ts, hhmm, wdays, st 
 from meteobot_subs 
-where user_id = :user-id order by hhmm;
+where user_id = :user-id order by hhmm, st;
 
 -- :name user-subs-by-id :? :*
 select subs_id, user_id, ts, hhmm, wdays, st from meteobot_subs

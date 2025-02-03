@@ -13,7 +13,7 @@
 (def ^:const SUBS_MAX 10)
 
 
-(def WD_MAP
+(def WDS_MAP
   {\0 "вс" \1 "пн" \2 "вт" \3 "ср" \4 "чт" \5 "пт" \6 "сб"})
 
 
@@ -34,8 +34,14 @@
   (->> hhmm (jt/format tf-hhmm) (map #(or (DIGITS_MAP %) %)) (str/join "")))
 
 
-(defn title [st-info]
-  (str "🔹 <b>" (botapi/hesc (:title st-info)) "</b>\n"))
+(defn fmt-title [title]
+  (str "🔹 <b>" (botapi/hesc title) "</b>\n"))
+
+
+(defn fmt-wdays [wds]
+  (when (and wds (not= wds "0123456"))
+    (->> wds (map WDS_MAP) (str/join ","))
+    ))
 
 
 (defn msg-subs [subs-id st-info hhmm wdays]
@@ -43,7 +49,7 @@
         tt (hhmm->big hhmm)
         wd-set (set wdays)
         wd-kbd (for [c "1234560"]
-                 {:text (if (wd-set c) (WD_MAP c) "-")
+                 {:text (if (wd-set c) (WDS_MAP c) "-")
                   :callback_data (str "subs:" subs-id ":wd:" c)})
         ]
     ;; NOTE (title st-info)
@@ -67,8 +73,15 @@
         
         txts (->> subs-list
                   (map (fn [sb]
-                         (let [st-info (store/station-info (:st sb))]
-                           (str (title st-info) "/subed_" (:subs_id sb))
+                         (let [st-info (store/station-info (:st sb))
+                               hhmm (->> sb :hhmm (jt/format tf-hhmm))
+                               wds (fmt-wdays (:wdays sb))
+                               ]
+                           (str (fmt-title (:title st-info))
+                                "⏰ " hhmm  (if wds (str " - " wds "\n") "  ") 
+                                "️✏️ " "/sub_" (:subs_id sb)
+                                "\n"
+                                )
                            )
                          
                          ))
@@ -85,20 +98,9 @@
 
 (defn cmd-subs-edit [cfg {{chat-id :id} :chat} {param :param}]
   (when-let [subs (store/user-subs-by-id chat-id (parse-long (or param "")))]
-    
-    (prn ">>>" subs)
-
-    ;;     txts (->> subs-list
-    ;;               (map (fn [sb]
-    ;;                      (let [st-info (store/station-info (:st sb))]
-    ;;                        (str (title st-info) "/subs:" (:subs_id sb))))))
-    
-
-
-    ;;     msg {:text (str/join "\n" txts)}
-    
-    ;; (botapi/send-message cfg chat-id msg)
-    
+    (let [st-info (store/station-info (:st subs))
+          msg (msg-subs (:subs_id subs) st-info (:hhmm subs) (:wdays subs))]
+      (botapi/send-message cfg chat-id msg))
     ))
 
 
@@ -115,7 +117,6 @@
               subs (store/user-subs-create chat-id {:hhmm hhmm :st st :wdays wdays})
               msg (msg-subs (:subs_id subs) st-info hhmm wdays)
               ]
-
           (botapi/answer-callback-text cfg cbk-id "")
           (botapi/send-message cfg chat-id msg)
         ;;
@@ -127,31 +128,35 @@
 
 (defn cb-subs [cfg
                {{{chat-id :id} :chat msg-id :message_id} :message :as cbk}
-               [_ subs-id cmd]]
+               [_ subs-id cmd wd]]
 
-  ;; cmd: hh- hh+ mm- mm+ ok del
-  (log! ["cb-subs:" subs-id cmd])
+  (log! ["cb-subs:" subs-id cmd wd])
 
   (when-let [subs (store/user-subs-by-id chat-id (parse-long subs-id))]
-    (case cmd
-      ;; hh- hh+ mm- mm+
-      "ok"  (botapi/delete-message cfg chat-id msg-id)
-      "del" (do 
-              (store/user-subs-delete chat-id (:subs_id subs))
-              (botapi/delete-message cfg chat-id msg-id))
-      (do
-        (log! :warn ["cb-subs: unexpected cmd" cbk])
-        nil))
-    ;;
-    (let [st-info (store/station-info (:st subs))
-        ;;   hhmm (-> (jt/local-time) (jt/truncate-to :hours))
-        ;;   wdays "0123456"
-          msg (msg-subs (:subs_id subs) st-info (:hhmm subs) (:wdays subs))]
+    (let [update-msg 
+          (case cmd
+            "hh-" true
+            "hh+" true 
+            "mm-" true
+            "mm+" true
 
-      ; (botapi/answer-callback-text cfg cbk-id "")
-      (botapi/edit-message cfg chat-id msg-id msg)
-        ;;
-      )))
+            "wd" true
+
+            "ok"  (do
+                    (botapi/delete-message cfg chat-id msg-id)
+                    false)
+            "del" (do
+                    (store/user-subs-delete chat-id (:subs_id subs))
+                    (botapi/delete-message cfg chat-id msg-id)
+                    false)
+            (do
+              (log! :warn ["cb-subs: unexpected cmd" cbk])
+              nil))]
+      (when update-msg
+        (let [st-info (store/station-info (:st subs))
+              msg (msg-subs (:subs_id subs) st-info (:hhmm subs) (:wdays subs))]
+          (botapi/edit-message cfg chat-id msg-id msg)
+          ,)))))
 
 
 (comment
