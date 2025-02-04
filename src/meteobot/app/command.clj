@@ -67,16 +67,13 @@
   ,)
 
 
-(defn stinfo [cfg 
-              {{chat-id :id} :chat} 
-              {st :param show-buttons :show-buttons show-links :show-links show-descr :show-descr
-               :or {show-buttons true show-links true show-descr true}}]
-  (if-let [stinfo (store/station-info st)]
+(defn stinfo [cfg {{chat-id :id} :chat} {st :param}]
+  (if-let [st-data (store/station-info st)]
     (let [favs (set (store/user-favs chat-id))
-          msg (cond-> (fmt/st-info stinfo 
-                                   (cond-> {:show-descr show-descr}
-                                     show-links (assoc :show-info-link false :show-map-link true)))
-                show-buttons (assoc :reply_markup (fmt/kbd-fav-subs st (favs st))))]
+          msg (fmt/st-info st-data 
+                           {:show-info-link false 
+                            :reply-markup (fmt/kbd-fav-subs st (favs st))})
+          ]
       (botapi/send-message cfg chat-id msg))
     (botapi/send-html cfg chat-id 
                       (str "Станция не найдена!\n⚠️ <b>" st "</b>"))))
@@ -157,7 +154,7 @@
         favs (set (store/user-favs chat-id))
         ]
     (doseq [msg (next-messages (set-fav-flag page favs) 
-                               #(fmt/st-info % {:show-info-link true :show-map-link true}) 
+                               #(fmt/st-info % nil) 
                                more-kbd)]
       (botapi/send-message cfg chat-id msg))
     ,))
@@ -186,7 +183,7 @@
       (botapi/edit-reply-markup cfg chat-id msg-id {})
       
       (doseq [msg (next-messages (set-fav-flag page favs) 
-                                 #(fmt/st-info % {:show-info-link true :show-map-link true}) 
+                                 #(fmt/st-info % nil) 
                                  more-kbd)]
         (botapi/send-message cfg chat-id msg))
       ,)
@@ -258,6 +255,13 @@
     ))
 
 
+(defn favs-brief [cfg {{chat-id :id} :chat}]
+  (doseq [st (store/user-favs chat-id)]
+    (when-let [st-data (store/station-info st)]
+      (botapi/send-message cfg chat-id (fmt/st-brief st-data)))
+      ,))
+
+
 ; - - - - - - - - - -
 
 (def command-map
@@ -267,8 +271,8 @@
    "near"   cmd-near
    "map"    cmd-map
    "favs"   cmd-favs
-   "sub"    #'subs/cmd-subs-edit
-   "subs"   #'subs/cmd-subs
+   "sub"    subs/cmd-subs-edit
+   "subs"   subs/cmd-subs
    "active" cmd-active
    ,})
 
@@ -283,7 +287,7 @@
 
 (defn route-text [cfg msg text]
   (condp = text
-    fmt/BTN_FAVS_TEXT (cmd-favs cfg msg {:show-buttons false :show-links false :show-descr false})
+    fmt/BTN_FAVS_TEXT (favs-brief cfg msg)
     nil))
 
 
@@ -299,8 +303,8 @@
    "near_next" cb-near-next
    "active"    cb-active
    "fav"       cb-fav
-   "subs_new"  #'subs/cb-subs-new
-   "subs"      #'subs/cb-subs
+   "subs_new"  subs/cb-subs-new
+   "subs"      subs/cb-subs
    ,})
 
 

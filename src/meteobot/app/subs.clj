@@ -84,21 +84,21 @@
 
 
 (defn cmd-subs [cfg {{chat-id :id} :chat} _]
-  (let [subs-list (store/user-subs chat-id)
-        txts (->> subs-list
-                  (map (fn [sb]
-                         (let [st-info (store/station-info (:st sb))
-                               hhmm (->> sb :hhmm (jt/format tf-hhmm))
-                               wds (fmt-wdays (:wdays sb))
-                               ]
-                           (str (fmt-title (:title st-info))
-                                "⏰ " hhmm  (if wds (str " - " wds "\n") "  ") 
-                                "️✏️ " "/sub_" (:subs_id sb)
-                                "\n"
-                                )
-                           ,))))
-        msg {:text (str/join "\n" txts) :parse_mode "HTML"}]
-    (botapi/send-message cfg chat-id msg)
+  (if-let [subs-list (seq (store/user-subs chat-id))]
+    (let [txts (->> subs-list
+                    (map (fn [sb]
+                           (let [st-info (store/station-info (:st sb))
+                                 hhmm (->> sb :hhmm (jt/format tf-hhmm))
+                                 wds (fmt-wdays (:wdays sb))]
+                             (str (fmt-title (:title st-info))
+                                  "⏰ " hhmm  (if wds (str " - " wds "\n") "  ")
+                                  "️✏️ " "/sub_" (:subs_id sb)
+                                  "\n")))))]
+      (botapi/send-html cfg chat-id (str/join "\n" txts))
+      ,)
+    (botapi/send-html cfg chat-id 
+                      (str "ℹ️ Для настройки рассылок\n" 
+                           "используйте кнопку ⏰ в списке станций."))
     ,))
 
 
@@ -112,8 +112,8 @@
 
 ;; {{{chat-id :id} :chat msg-id :message_id} :message :as msg}
 
-(defn cb-subs-new [cfg
-                   {{{chat-id :id} :chat msg-id :message_id} :message  cbk-id :id :as msg}
+(defn cb-subs-new [cfg  
+                   {{{chat-id :id} :chat} :message cbk-id :id} 
                    [_ st]]
   (when-let [st-info (store/station-info st)]
     (let [all-subs (store/user-subs chat-id)]

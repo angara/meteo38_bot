@@ -192,41 +192,58 @@
 ;; https://en.wikipedia.org/wiki/List_of_emojis
 ;; https://unicode.org/emoji/charts/full-emoji-list.html
 
+
+(defn last-t-p-w [{:keys [t t_ts t_delta
+                          p p_ts
+                          w w_ts 
+                          g g_ts b]}]
+  [(when (fresh? t_ts) (format-t t t_delta))
+   (when (fresh? p_ts) (format-p p))
+   (when (fresh? w_ts) (format-wind w (when (fresh? g_ts) g) b))])
+
+
 (defn st-info [{:keys [st title descr elev last distance last_ts is-fav]} 
-               {:keys [show-map-link show-info-link show-descr] :or {show-descr true}}]
-  (let [{:keys [t t_ts t_delta
-                p p_ts
-                w g b w_ts g_ts]} last
-        v_t (when (fresh? t_ts) (format-t t t_delta))
-        v_p (when (fresh? p_ts) (format-p p))
-        v_w (when (fresh? w_ts) 
-              (format-wind w (when (fresh? g_ts) g) b))
-        ]
+               {:keys [show-info-link reply-markup] 
+                :or {show-info-link true 
+                     reply-markup main-buttons}}]
+  (let [[v_t v_p v_w] (last-t-p-w last)]
     {:text (str
-            "🔹 <b>" (hesc title) "</b>"  
+            (if is-fav "⭐" "🔹") " <b>" (hesc title) "</b>"  
             (when last_ts (str "  <i>'" (last-dt (ts->dt last_ts)) "</i>")) 
-            (when is-fav " ⭐")
             "\n"
-            (when show-descr (str (hesc descr) "\n"))
+            (hesc descr) "\n"
             "\n"
             "<a href=\"" (meteo-st-link st) "\">"
-            (when-not (or v_t v_p v_w) "⚠️ нет актуальных данных\n")
+            (when-not (or v_t v_p v_w) "⚠️ нет актуальных данных")
             "  " (->> [v_t v_p v_w] (remove nil?) (str/join ", "))
             "</a>"
             "\n"
             "\n"
-            (when show-map-link
-              (str "📌 " "/map_" st (when elev (str "  ^" (int elev) " м"))
-                   (when distance (str ",  (" (int (/ distance 1000)) " км)"))
-                   "\n"))
+            "📌 " "/map_" st (when elev (str "  ^" (int elev) " м"))
+            (when distance (str ",  (" (int (/ distance 1000)) " км)"))
+            "\n"
             (when show-info-link (str "ℹ️ /info_" st)) "\n"
             )
      :parse_mode "HTML"
      :link_preview_options {:is_disabled true}
-     :reply_markup main-buttons
-     })
-  
-  )
+     :reply_markup reply-markup
+     }))
+
+
+(defn st-brief [{:keys [st title last last_ts is-fav]}]
+  (let [[v_t v_p v_w] (last-t-p-w last)]
+    {:parse_mode "HTML"
+     :text (str
+            (if is-fav "⭐" "🔹") " <b>" (hesc title) "</b>"
+            (when last_ts (str "  <i>'" (last-dt (ts->dt last_ts)) "</i>"))
+            "\n"
+            "<a href=\"" (meteo-st-link st) "\">"
+            (when-not (or v_t v_p v_w) "⚠️ нет актуальных данных\n")
+            "  " (->> [v_t v_p v_w] (remove nil?) (str/join ", "))
+            "</a>")
+     :link_preview_options {:is_disabled true}
+     }))
+
 
 ;; station-info
   ;;=> {:closed_at nil,
@@ -251,9 +268,8 @@
 
 (defn active-list-item [{:keys [st title descr elev distance last_ts is-fav]}]
   (str
-   "🔹 <b>" (hesc title) "</b>"
+   (if is-fav "⭐" "🔹") " <b>" (hesc title) "</b>"
    (when last_ts (str "  <i>'" (last-dt (ts->dt last_ts)) "</i>")) 
-   (when is-fav " ⭐")
    "\n"
    (hesc descr) "\n"
    "ℹ️ /info_" st
