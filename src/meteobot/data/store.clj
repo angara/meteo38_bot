@@ -2,6 +2,7 @@
   (:require
    [clojure.core.cache.wrapped :as cache]
    [clojure.core.memoize :as memo]
+   [clojure.string :as str]
    [pg.core :refer [with-transaction]]
    [meteobot.data.meteo-api :as mapi]
    [meteobot.config :refer [config]]
@@ -107,7 +108,6 @@
         ))
     ))
 
-(vec '(1 2 3))
 
 (defn user-fav-del [user-id st]
   (with-transaction [tx pg/dbc]
@@ -147,6 +147,9 @@
   (sql/user-subs-delete pg/dbc {:user-id user-id :subs-id subs-id}))
 
 
-(defn subs-for-time [wday hhmm]
-  ;; XXX: !!!
-  )
+(defn subs-hhmm [hhmm wday]
+  (let [wd (str wday)]
+    (->> 
+     (sql/subs-hhmm pg/dbc {:hhmm hhmm})
+     (filter #(str/includes? (:wdays %) wd))
+     )))

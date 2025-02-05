@@ -8,6 +8,7 @@
    ; 
    [mlib.telegram.botapi :refer [get-me]]
    [meteobot.app.command :as cmd]
+   [meteobot.main]
    ))
 
 
@@ -26,9 +27,9 @@
   (-> (cfg/make-config)
       (mount/with-args)
       (mount/only #{#'cfg/config 
-                    ;; #'meteobot.app.serv/bot-info 
                     #'meteobot.app.serv/poller
                     #'meteobot.data.pg/dbc
+                    #'meteobot.app.sender/sender-proc
                     })
       (mount/start)
       )

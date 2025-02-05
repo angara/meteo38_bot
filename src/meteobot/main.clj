@@ -3,14 +3,10 @@
   (:require
    [taoensso.telemere :refer [log!]]
    [mount.core :as mount]
-  ;;  [meteo.data]
-  ;;  [meteo.poll]
-  ;;  [meteo.sender]
-  ;;   ;
-  ;;  [cron.meteo]
    [meteobot.config :refer [build-info make-config]]
    [meteobot.app.serv]
-   ))
+   [meteobot.app.sender]
+   ,))
 
 
 (defn -main []

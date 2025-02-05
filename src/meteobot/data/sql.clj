@@ -12,5 +12,6 @@
 (declare user-subs-create)
 (declare user-subs-update)
 (declare user-subs-delete)
+(declare subs-hhmm)
 
 (hug/def-db-fns (io/resource "meteobot/data/api.sql"))

@@ -13,19 +13,18 @@
 
 
 (def WDS_MAP
-  {\0 "вс" \1 "пн" \2 "вт" \3 "ср" \4 "чт" \5 "пт" \6 "сб"})
+  {\1 "пн" \2 "вт" \3 "ср" \4 "чт" \5 "пт" \6 "сб" \7 "вс"})
 
 
 (def DIGITS_MAP
-  {\0 "0️⃣" \1 "1️⃣" \2 "2️⃣" \3 "3️⃣" \4 "4️⃣" 
-   \5 "5️⃣" \6 "6️⃣" \7 "7️⃣" \8 "8️⃣" \9 "9️⃣"
-   })
+  {\0 "0️⃣" \1 "1️⃣" \2 "2️⃣" \3 "3️⃣" \4 "4️⃣" \5 "5️⃣" \6 "6️⃣" \7 "7️⃣" \8 "8️⃣" \9 "9️⃣"})
 
 
 ; 0️⃣1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣8️⃣9️⃣
 
 ;; ⏩ ⏪ ◀ ▶️ ⬅️ ➡️
 ;; ✅❌🚫❎
+
 
 (def tf-hhmm (jt/formatter "HH:mm"))
 
@@ -42,7 +41,7 @@
   (when (seq wds)
     (let [wset (set wds)]
       (str "["
-           (->> "1234560"
+           (->> "1234567"
                 (filter wset)
                 (map WDS_MAP)
                 (str/join ", "))
@@ -63,7 +62,7 @@
   (let [title (:title st-info)
         tt (hhmm->big hhmm)
         wd-set (set wdays)
-        wd-kbd (for [c "1234560"]
+        wd-kbd (for [c "1234567"]
                  {:text (if (wd-set c) (WDS_MAP c) "--")
                   :callback_data (str "subs:" subs-id ":wd:" c)})
         ]
@@ -74,10 +73,10 @@
      :parse_mode "HTML"
      :reply_markup {:inline_keyboard
                     [wd-kbd
-                     [{:text "⏪" :callback_data (str "subs:" subs-id ":hh-")}
-                      {:text "◀"  :callback_data (str "subs:" subs-id ":mm-")}
-                      {:text "▶️"  :callback_data (str "subs:" subs-id ":mm+")}
-                      {:text "⏩" :callback_data (str "subs:" subs-id ":hh+")}]
+                     [{:text #_"⏪" "-1 ч" :callback_data (str "subs:" subs-id ":hh-")}
+                      {:text #_"◀" "-10 м"  :callback_data (str "subs:" subs-id ":mm-")}
+                      {:text #_"▶️" "+10 м" :callback_data (str "subs:" subs-id ":mm+")}
+                      {:text #_"⏩" "+1 ч" :callback_data (str "subs:" subs-id ":hh+")}]
                      [{:text "✅" :callback_data (str "subs:" subs-id ":ok")}
                       {:text "❌" :callback_data (str "subs:" subs-id ":del:" (next-seq))}]]}})
   )
@@ -123,7 +122,7 @@
     (let [all-subs (store/user-subs chat-id)]
       (if (< (count all-subs) SUBS_MAX)
         (let [hhmm (-> (jt/local-time) (jt/truncate-to :hours))
-              wdays "0123456"
+              wdays "1234567"
               subs (store/user-subs-create chat-id {:hhmm hhmm :st st :wdays wdays})
               msg (msg-subs (:subs_id subs) st-info hhmm wdays)
               ]
@@ -145,8 +144,8 @@
 (comment
   (wd-toggle "1234" "1")
   ;;=> "234"
-  (wd-toggle "1234" "0")
-  ;;=> "01234"
+  (wd-toggle "1234" "7")
+  ;;=> "12347"
   (wd-toggle "4321" "2")
   ;;=> "134"
   ,)
@@ -195,18 +194,3 @@
               msg (msg-subs sub-id st-info (:hhmm subs) (:wdays subs))]
           (botapi/edit-message cfg chat-id msg-id msg)
           ,)))))
-
-
-(comment
-  
-  #_(store/user-subs-add 1 {:hhmm (jt/truncate-to (jt/local-time) :hours) 
-                          :wdays "0123456" 
-                          :st "uiii"})
-  ;;=> {:hhmm #object[java.time.LocalTime 0x25ed1a9f "22:00"],
-  ;;    :wdays "0123456",
-  ;;    :ts #object[java.time.OffsetDateTime 0x7018f036 "2025-02-02T22:40:32.696608+08:00"],
-  ;;    :subs_id 5,
-  ;;    :st "uiii",
-  ;;    :user_id 1}
-      
-  ,)

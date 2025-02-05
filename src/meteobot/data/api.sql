@@ -28,3 +28,7 @@ where subs_id=:subs-id and user_id=:user-id;
 
 -- :name user-subs-delete :? :*
 delete from meteobot_subs where subs_id=:subs-id and user_id=:user-id;
+
+-- :name subs-hhmm :? :*
+select subs_id, user_id, hhmm, wdays, st from meteobot_subs where hhmm=:hhmm;
+
