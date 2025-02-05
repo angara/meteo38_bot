@@ -1,20 +1,17 @@
 (ns meteobot.app.sender
   (:require
-   [clojure.string :as str]
    [java-time.api :as jt]
    [mount.core :as mount]
    [chime.core :as chime]
    [taoensso.telemere :refer [log!]]
+   [mlib.telegram.botapi :as botapi]
    [meteobot.config :refer [config]]
+   [meteobot.app.fmt :as fmt]
    [meteobot.data.store :as store]
    ,))
 
 
 (set! *warn-on-reflection* true)
-
-
-;; (defn local-now []
-;;   (jt/local-date-time (jt/instant) (:timezone config)))
 
 
 (defn process [cfg inst]
@@ -24,13 +21,15 @@
  (log! ["process.time" hhmm wdc]) ;; XXX:!!!
       (when-let [subs (seq (store/subs-hhmm hhmm wdc))]
         (log! ["process subs:" hhmm wdc (count subs)])
-        
-        ;;
-        
-        
-        )
-      )
-  )
+        (doseq [{:keys [user_id st] :as sb} subs]
+          (try
+            (if-let [st-data (store/station-info st)]
+              (botapi/send-message cfg user_id (fmt/st-brief st-data))
+              (log! :warn ["process.sub missing st-info:" st]))
+        ;; send each sub      
+            (catch Exception ex
+              (log! :warn ["process.sub:" sb ex]))))
+        ,)))
 
 
 (comment
