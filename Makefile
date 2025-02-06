@@ -17,6 +17,9 @@ PROD_PATH = /app/meteo38_bot
 SHELL = bash
 
 
+all: clean build deploy restart
+
+
 dev:
 	set -a && source .env && clojure -M:dev:nrepl
 

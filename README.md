@@ -1,5 +1,9 @@
 # Angara.Net: meteo38_bot
 
+## 2DO
+
+- [] metrics
+
 ## BotFather info
 
 ```txt
