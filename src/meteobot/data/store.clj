@@ -11,9 +11,10 @@
    ))
 
 
-(def ^:const ST_ACTIVE_TTL 5000) ;; XXX:!!!
-(def ^:const ST_INFO_TTL   5000) ;; XXX:!!!
-
+;; 2 mins
+(def ^:const ST_ACTIVE_TTL (* 120 1000))
+(def ^:const ST_INFO_TTL   (* 120 1000))
+(def ^:const USER_LOCATION_TTL (* 2 3600 1000)) ;; 2 hours
 
 (def ^:const FAVS_MAX 10)
 
@@ -56,9 +57,8 @@
   ())
 
 
-;; ont day TTL for user location
 (def user-location* 
-  (cache/ttl-cache-factory {} :ttl (* 24 3600 1000)))
+  (cache/ttl-cache-factory {} :ttl USER_LOCATION_TTL))
 
 
 (defn set-user-location [user-id location]
@@ -67,19 +67,6 @@
 
 (defn get-user-location [user-id]
   (cache/lookup user-location* user-id))
-
-
-(comment
-  
-  user-location*
-  
-  (set-user-location 1 :a)
-  (set-user-location 2 :b)
-  
-  (get-user-location 1)
-  (get-user-location 2)
-
-  ,)
 
 
 (defn- get-user-favs [conn user-id] 
@@ -115,15 +102,6 @@
       (sql/save-favs tx {:user-id user-id :favs (remove #(= % st) favs)})
       )))
 
-
-(comment
-    
-  (sql/save-favs pg/dbc {:user-id 1 :favs #{"1" "2" "3"}})
-  ;;=> {:inserted 1}
-  (sql/user-favs pg/dbc {:user-id 1})
-  ;;=> [{:favs ["3" "1" "2"], :ts #object[java.time.OffsetDateTime 0x7b012387 "2025-02-02T17:56:53.188355+08:00"], :user_id 1}]
-
-  ,)
 
 ; - - - - - - - - - -
 

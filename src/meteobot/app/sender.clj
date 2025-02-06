@@ -15,21 +15,20 @@
 
 
 (defn process [cfg inst]
-  (let [dt (-> inst (jt/local-date-time (:timezone config)))
+  (let [dt   (-> inst (jt/local-date-time (:timezone config)))
         hhmm (-> dt (jt/local-time dt) (jt/truncate-to :minutes))
-        wdc (-> dt (jt/day-of-week) (.getValue) (str))]
- (log! ["process.time" hhmm wdc]) ;; XXX:!!!
-      (when-let [subs (seq (store/subs-hhmm hhmm wdc))]
-        (log! ["process subs:" hhmm wdc (count subs)])
-        (doseq [{:keys [user_id st] :as sb} subs]
-          (try
-            (if-let [st-data (store/station-info st)]
-              (botapi/send-message cfg user_id (fmt/st-brief st-data))
-              (log! :warn ["process.sub missing st-info:" st]))
-        ;; send each sub      
-            (catch Exception ex
-              (log! :warn ["process.sub:" sb ex]))))
-        ,)))
+        wdc  (-> dt (jt/day-of-week) (.getValue) (str))]
+    (when-let [subs (seq (store/subs-hhmm hhmm wdc))]
+      (log! ["process subs:" hhmm wdc (count subs)])
+      (doseq [{:keys [user_id st] :as sb} subs]
+        (try
+          (if-let [st-data (store/station-info st)]
+            (do (botapi/send-message cfg user_id (fmt/st-brief st-data))
+                (log! ["process.sub sent:" st user_id]))
+            (log! :warn ["process.sub missing st-info:" st]))
+          (catch Exception ex
+            (log! :warn ["process.sub:" sb ex]))))
+      ,)))
 
 
 (comment
@@ -54,7 +53,8 @@
 
 
 (mount/defstate sender-proc
-  :start (sender-seq (mount/args) process)
+  :start (let [cfg {:apikey (:telegram-apikey (mount/args))}]
+           (sender-seq cfg process))
   :stop (when sender-proc
           (.close ^java.lang.AutoCloseable sender-proc)))
 

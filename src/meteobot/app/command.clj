@@ -293,7 +293,10 @@
 
 (defn route-text [cfg msg text]
   (condp = text
-    fmt/BTN_FAVS_TEXT (favs-brief cfg msg)
+    fmt/BTN_FAVS_TEXT 
+    (do
+      (favs-brief cfg msg)
+      true)
     nil))
 
 

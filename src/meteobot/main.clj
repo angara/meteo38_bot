@@ -4,6 +4,7 @@
    [taoensso.telemere :refer [log!]]
    [mount.core :as mount]
    [meteobot.config :refer [build-info make-config]]
+   [meteobot.data.pg]
    [meteobot.app.serv]
    [meteobot.app.sender]
    ,))

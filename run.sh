@@ -1,6 +1,7 @@
 #!/bin/bash
 
-export CONFIG_EDN="../conf/bots.edn"
-exec java -jar meteo38_bot.jar | tee -a ../log/meteo38_bot.log
+set -a
+source "../conf/meteo38_bot.env"
+exec java -jar meteo38_bot.jar 2>&1 | tee -a ../log/meteo38_bot.log
 
 #.

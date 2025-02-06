@@ -154,10 +154,7 @@
 (defn cb-subs [cfg
                {{{chat-id :id} :chat msg-id :message_id} :message :as cbk}
                [_ subs-id cmd wd]]
-
-  (log! ["cb-subs:" subs-id cmd wd])
-
-  (when-let [subs (store/user-subs-by-id chat-id (parse-long subs-id))]
+    (when-let [subs (store/user-subs-by-id chat-id (parse-long subs-id))]
     (let [sub-id (:subs_id subs)
           hhmm (:hhmm subs)
           wdays (:wdays subs)

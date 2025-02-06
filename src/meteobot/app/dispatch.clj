@@ -12,7 +12,6 @@
 
 
 (defn handler-by-type [update-type chat-type]
-  (tap> [update-type chat-type (get PRIVATE_HANDLERS_MAP update-type)])
   (case chat-type
     "private" (get PRIVATE_HANDLERS_MAP update-type)
     ;; "group"      (get GROUP_HANDLERS_MAP update-type)

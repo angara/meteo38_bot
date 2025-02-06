@@ -6,7 +6,7 @@
 
 
 (defn message [cfg {:keys [text location] :as msg}]
-  (log! ["inbound/message.text:" text])
+  ;; (log! ["inbound/message.text:" text])
   (or
    (route-command cfg msg text)
    (route-text cfg msg text)
@@ -18,7 +18,7 @@
 
 
 (defn callback [cfg cbk]
-  (log! ["inbound/callback:" cbk])
+  ;; (log! ["inbound/callback:" cbk])
   (or
    (route-callback cfg cbk)
    (do
