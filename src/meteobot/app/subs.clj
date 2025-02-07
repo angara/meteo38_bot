@@ -9,7 +9,7 @@
    ,))
 
 
-(def ^:const SUBS_MAX 10)
+(def ^:const SUBS_MAX 30)
 
 
 (def WDS_MAP
