@@ -16,7 +16,7 @@
 (def ^:const ST_INFO_TTL   (* 120 1000))
 (def ^:const USER_LOCATION_TTL (* 2 3600 1000)) ;; 2 hours
 
-(def ^:const FAVS_MAX 10)
+(def ^:const FAVS_MAX 20)
 
 
 (def active-stations-cached-fn
