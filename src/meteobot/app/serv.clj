@@ -5,6 +5,7 @@
    [mlib.telegram.botapi  :refer [get-me get-updates LONG_POLLING_TIMEOUT]]
    [meteobot.app.dispatch :refer [router]]
    [meteobot.app.command :refer [setup-menu-commands]]
+   [meteobot.metrics.reg :refer [inc-metric]]
    ,))
 
 
@@ -48,7 +49,7 @@
                           (log! "poller-loop: get-updates interrupted")
                           (throw ex))
                         (catch Exception ex
-                          ;; (inc :telegram-updates-err)
+                          (inc-metric :meteobot/telegram-updates {:type "error"})
                           (log! {:level :warn :data (ex-data ex) :msg ["get-updates exception" ex]})
                           (Thread/sleep ^long GET_UPDATES_ERROR_PAUSE)
                           nil))]

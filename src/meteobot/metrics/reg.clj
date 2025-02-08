@@ -1,11 +1,7 @@
-(ns meteobot.metrics.core
+(ns meteobot.metrics.reg
   (:require
    [iapetos.core :as prom]
-   [iapetos.export :as prom-exp]
    ,))
-
-
-;; iexp/text-format registry
 
 
 (def registry
@@ -31,27 +27,23 @@
     ,)))
 
 
-
 (defn inc-metric [metric labels]
   (try
     (prom/inc registry metric labels 1)
     (catch Exception _
-      (prom/inc registry :meteobot/internal-errors {:type "wrong_metric" :cause metric} 1))
+      (prom/inc registry 
+                :meteobot/internal-errors 
+                {:type "wrong_metric" :cause metric} 1))
     ,))
 
 
 (comment
-  
-  (prom/inc registry :meteobot/messages-in {:type "message"} 1)
-
-  (prom/inc registry :meteobot/telegram-api {:method "sendMessage"} 1)
-
-  (print (prom-exp/text-format registry))
+    
+  (alter-var-root #'mlib.telegram.botapi/*metric-hook*
+                  (constantly (partial inc-metric :meteobot/telegram-api )))
 
   
-  (inc-metric :meteobot/telegram-api nil)
-
-
-  (inc-metric :meteobot/_non-existent {})
+  (alter-var-root #'meteobot.data.meteo-api/*metric-hook*
+                  (constantly (partial inc-metric :meteobot/meteo-data-api)))
 
   ,)
