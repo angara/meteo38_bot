@@ -74,6 +74,9 @@
   ())
 
 
+(def ^:dynamic *metric-hook* nil)
+
+
 (defn api-call[method params 
                {:keys [apikey timeout retry retry-sleep]
                 :or {timeout CONNECTION_TIMEOUT
@@ -88,6 +91,8 @@
              }]
     (loop [n retry]
       (let [{:keys [status body error]} @(http/request req)]
+        (when *metric-hook*
+          (*metric-hook* {:method (name method) :status status}))
         (if (= 200 status)
           (try
             (-> body

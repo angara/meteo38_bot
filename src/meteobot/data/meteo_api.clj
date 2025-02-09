@@ -44,10 +44,15 @@
   )
 
 
+(def ^:dynamic *metric-hook* nil)
+
+
 ;; lat=52.28&lon=104.28&last-hours=2
 
 (defn active-stations [{:keys [lat lon hours]} 
                        {:keys [meteo-api-url meteo-api-auth meteo-api-timeout]}]
+  (when *metric-hook*
+    (*metric-hook* {:method "active-stations"}))
   (-> 
    (str meteo-api-url "/active-stations?" (join-qs {:lat lat :lon lon :last-hours hours}))
    (get-json {:auth meteo-api-auth :timeout meteo-api-timeout})
@@ -56,6 +61,8 @@
 
 
 (defn station-info [st {:keys [meteo-api-url meteo-api-auth meteo-api-timeout]}]
+  (when *metric-hook*
+    (*metric-hook* {:method "station-info"}))
   (->
    (str meteo-api-url "/station-info?" (join-qs {:st st}))
    (get-json {:auth meteo-api-auth :timeout meteo-api-timeout})

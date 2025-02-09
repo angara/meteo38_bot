@@ -21,6 +21,9 @@
    :meteo-api-auth    (env-str "METEO_API_AUTH")
    :meteo-api-timeout (env-int "METEO_API_TIMEOUT" 5000) ;; ms
    ;
+   :metrics-bind      (env-str "METRICS_BIND" "localhost")
+   :metrics-port      (env-int "METRICS_PORT" 7937)
+   ;
    :timezone (jt/zone-id (env-str "TIMEZONE" "Asia/Irkutsk"))
 
    ;

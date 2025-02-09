@@ -1,6 +1,7 @@
 (ns meteobot.app.dispatch
   (:require
    [meteobot.app.inbound :as in]
+   [meteobot.metrics.reg :refer [inc-metric]]
    ))
 
 
@@ -28,6 +29,7 @@
         chat-type (or
                    (some-> data :chat :type)
                    (some-> data :message :chat :type))
+        _ (inc-metric :meteobot/telegram-updates {:type update-type}) ;; ?chat-type?
         handler (handler-by-type update-type chat-type)]
     (if handler
       (handler ctx data)

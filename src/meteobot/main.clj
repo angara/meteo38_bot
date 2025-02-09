@@ -7,6 +7,7 @@
    [meteobot.data.pg]
    [meteobot.app.serv]
    [meteobot.app.sender]
+   [meteobot.metrics.export]
    ,))
 
 

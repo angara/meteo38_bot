@@ -47,6 +47,6 @@
 
             ;; https://github.com/clojure/tools.build#release-information
             :build   {:extra-paths ["target/resources"]
-                      :deps {io.github.clojure/tools.build {:mvn/version "0.10.6"}}
+                      :deps {io.github.clojure/tools.build {:mvn/version "0.10.7"}}
                       :ns-default build}}
   ,}

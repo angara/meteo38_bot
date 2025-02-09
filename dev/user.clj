@@ -28,6 +28,7 @@
                     #'meteobot.app.serv/poller
                     #'meteobot.data.pg/dbc
                     #'meteobot.app.sender/sender-proc
+                    #'meteobot.metrics.export/metrics-endpoint
                     })
       (mount/start)
       )
