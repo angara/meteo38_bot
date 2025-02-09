@@ -1,6 +1,8 @@
 (ns meteobot.metrics.reg
   (:require
    [iapetos.core :as prom]
+   [mlib.telegram.botapi :as botapi]
+   [meteobot.data.meteo-api :as meteo-api]
    ,))
 
 
@@ -37,13 +39,13 @@
     ,))
 
 
-(comment
-    
-  (alter-var-root #'mlib.telegram.botapi/*metric-hook*
-                  (constantly (partial inc-metric :meteobot/telegram-api )))
-
+(defn set-metric-hooks []
   
-  (alter-var-root #'meteobot.data.meteo-api/*metric-hook*
+  (alter-var-root #'botapi/*metric-hook*
+                  (constantly (partial inc-metric :meteobot/telegram-api )))
+  
+  (alter-var-root #'meteo-api/*metric-hook*
                   (constantly (partial inc-metric :meteobot/meteo-data-api)))
-
+  
   ,)
+

@@ -24,6 +24,10 @@ dev:
 	set -a && source .env && clojure -M:dev:nrepl
 
 
+run:
+	set -a && source .env && java -jar ${UBER_JAR}
+
+
 build: clean
 	@clj -T:build uberjar
 
