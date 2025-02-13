@@ -21,7 +21,7 @@
                   {:labels [:method :status] :description "telegram api-call status"})
 
     (prom/counter :meteobot/send-subs
-              {:description "send subscription data"})
+              {:labels [:station] :description "send subscription data"})
     
     (prom/counter :meteobot/meteo-data-api
               {:labels [:method] :description "meteo-data api"})

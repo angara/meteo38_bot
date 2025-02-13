@@ -8,6 +8,7 @@
    [meteobot.config :refer [config]]
    [meteobot.app.fmt :as fmt]
    [meteobot.data.store :as store]
+   [meteobot.metrics.reg :refer [inc-metric]]
    ,))
 
 
@@ -22,6 +23,7 @@
       (log! ["process subs:" hhmm wdc (count subs)])
       (doseq [{:keys [user_id st] :as sb} subs]
         (try
+          (inc-metric :meteobot/send-subs {:station st})
           (if-let [st-data (store/station-info st)]
             (do (botapi/send-message cfg user_id (fmt/st-brief st-data))
                 (log! ["process.sub sent:" st user_id]))
