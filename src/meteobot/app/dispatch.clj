@@ -29,7 +29,7 @@
         chat-type (or
                    (some-> data :chat :type)
                    (some-> data :message :chat :type))
-        _ (inc-metric :meteobot/telegram-updates {:type update-type}) ;; ?chat-type?
+        _ (inc-metric :meteobot/telegram-updates {:type (name update-type)}) ;; ?chat-type?
         handler (handler-by-type update-type chat-type)]
     (if handler
       (handler ctx data)
