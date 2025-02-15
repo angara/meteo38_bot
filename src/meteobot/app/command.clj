@@ -37,6 +37,12 @@
    ,))
 
 
+(def EMPTY_FAVS 
+  (str "🔸 Чтобы добавить станцию в избранное\n\n"
+       "- зайдите в список станций /active или /near\n"
+       "- перейдите на информацию о станции по ссылке 'ℹ️ info_'\n"
+       "- нажмите на кнопку ➕."))
+
 
 (defn parse-command [s]
   (when s
@@ -235,8 +241,10 @@
 ; - - - - - - - - - -
 
 (defn cmd-favs [cfg {{chat-id :id} :chat :as msg} opts]
-  (doseq [st (store/user-favs chat-id)]
-    (stinfo cfg msg (assoc opts :param st))))
+  (if-let [fvs (seq (store/user-favs chat-id))]
+    (doseq [st fvs]
+      (stinfo cfg msg (assoc opts :param st)))
+    (botapi/send-html cfg chat-id EMPTY_FAVS)))
 
 
 (defn cb-fav [cfg 
@@ -259,12 +267,7 @@
       (when-let [st-data (store/station-info st)]
         (botapi/send-message cfg chat-id (fmt/st-brief st-data)))
       ,)
-    (botapi/send-html cfg chat-id
-                      (str "🔸 Чтобы добавить станцию в избранное\n\n"
-                           "- зайдите в список станций /active или /near\n"
-                           "- перейдите на информацию о станции по ссылке 'ℹ️ info_'\n"
-                           "- нажмите на кнопку ➕."
-                           ))
+    (botapi/send-html cfg chat-id EMPTY_FAVS)
     ))
 
 
