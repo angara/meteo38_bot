@@ -32,6 +32,17 @@ build: clean
 	@clj -T:build uberjar
 
 
+image: build
+	docker build -t meteo/meteo38_bot .
+
+run-image:
+	docker run \
+	  -e 'DATABASE_URL=postgres://postgres:5432/meteo?user=meteo&password=meteo' \
+	  -e 'TELEGRAM_APIKEY=test_key' \
+	  -e 'METEO_API_AUTH=test_auth' \
+	  --rm meteo/meteo38_bot
+
+
 deploy:
 	chmod g+r ${UBER_JAR}
 	scp run.sh ${UBER_JAR} ${PROD_HOST}:${PROD_PATH}

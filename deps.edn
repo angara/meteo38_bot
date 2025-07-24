@@ -1,7 +1,7 @@
 {
   :deps {
-         org.clojure/clojure       {:mvn/version "1.12.0"}
-         org.clojure/core.async    {:mvn/version "1.7.701"}
+         org.clojure/clojure       {:mvn/version "1.12.1"}
+         org.clojure/core.async    {:mvn/version "1.8.741"}
          org.clojure/core.cache    {:mvn/version "1.1.234"}
          org.clojure/core.memoize  {:mvn/version "1.1.266"}
 
@@ -9,9 +9,9 @@
          clojure.java-time/clojure.java-time {:mvn/version "1.4.3"}
          
          metosin/jsonista          {:mvn/version "0.3.13"}
-         metosin/malli             {:mvn/version "0.17.0"}
+         metosin/malli             {:mvn/version "0.19.1"}
          http-kit/http-kit         {:mvn/version "2.8.0"}
-         mount/mount               {:mvn/version "0.1.21"}
+         mount/mount               {:mvn/version "0.1.23"}
          jarohen/chime             {:mvn/version "0.3.3"}
 
          ; redis.clients/jedis       {:mvn/version "5.2.0"}
@@ -21,14 +21,14 @@
          clj-commons/iapetos {:mvn/version "0.1.14"}
 
          ;; https://github.com/igrishaev/pg2
-         com.github.igrishaev/pg2-core {:mvn/version "0.1.33"}
-         com.github.igrishaev/pg2-honey {:mvn/version "0.1.33"}
-         com.github.igrishaev/pg2-hugsql {:mvn/version "0.1.33"}
+         com.github.igrishaev/pg2-core {:mvn/version "0.1.40"}
+         com.github.igrishaev/pg2-honey {:mvn/version "0.1.40"}
+         com.github.igrishaev/pg2-hugsql {:mvn/version "0.1.40"}
          ; com.github.igrishaev/pg2-migration {:mvn/version "0.1.33"}
          
-         com.taoensso/telemere       {:mvn/version "1.0.0-RC2"}
-         com.taoensso/telemere-slf4j {:mvn/version "1.0.0-RC2"}
-         org.slf4j/slf4j-api         {:mvn/version "2.0.16"}
+         com.taoensso/telemere       {:mvn/version "1.0.1"}
+         com.taoensso/telemere-slf4j {:mvn/version "1.0.1"}
+         org.slf4j/slf4j-api         {:mvn/version "2.0.17"}
          ,}
 
   :paths ["src"] ;; "java
@@ -39,14 +39,14 @@
 
             ; https://github.com/djblue/portal
             ; https://practical.li/clojure/data-inspector/portal/            
-            :nrepl {:extra-deps {djblue/portal     {:mvn/version "0.58.5"}
+            :nrepl {:extra-deps {djblue/portal     {:mvn/version "0.59.2"}
                                  nrepl/nrepl       {:mvn/version "1.3.1"}
-                                 cider/cider-nrepl {:mvn/version "0.52.0"}}
+                                 cider/cider-nrepl {:mvn/version "0.57.0"}}
                     :main-opts ["-m" "nrepl.cmdline"
                                 "--middleware" "[cider.nrepl/cider-middleware,portal.nrepl/wrap-portal]"]}
 
             ;; https://github.com/clojure/tools.build#release-information
             :build   {:extra-paths ["target/resources"]
-                      :deps {io.github.clojure/tools.build {:mvn/version "0.10.7"}}
+                      :deps {io.github.clojure/tools.build {:mvn/version "0.10.9"}}
                       :ns-default build}}
   ,}
