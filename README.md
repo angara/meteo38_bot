@@ -2,7 +2,7 @@
 
 ## 2DO
 
-- [] metrics
+- [x] metrics
 
 ## BotFather info
 
