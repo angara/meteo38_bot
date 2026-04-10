@@ -1,6 +1,6 @@
 .EXPORT_ALL_VARIABLES:
 
-APP_NAME   = mmeteo38_bot
+APP_NAME   = meteo38_bot
 VER_MAJOR  = 2
 VER_MINOR  = 0
 MAIN_CLASS = meteobot.main

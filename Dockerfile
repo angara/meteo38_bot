@@ -1,4 +1,4 @@
-FROM openjdk:21-jdk-slim
+FROM eclipse-temurin:25-jdk
 
 WORKDIR /app
 COPY target/meteo38_bot.jar /app
