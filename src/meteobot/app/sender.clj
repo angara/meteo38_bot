@@ -55,8 +55,10 @@
 
 
 (mount/defstate sender-proc
-  :start (let [cfg {:apikey (:telegram-apikey (mount/args))}]
+  :start (let [args (mount/args)
+               cfg {:apikey (:telegram-apikey args)
+                    :telegram-http-proxy (:telegram-http-proxy args)}
+               ]
            (sender-seq cfg process))
   :stop (when sender-proc
           (.close ^java.lang.AutoCloseable sender-proc)))
-

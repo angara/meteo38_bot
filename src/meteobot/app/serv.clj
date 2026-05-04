@@ -23,10 +23,10 @@
 
 
 (defn poller-loop [config handler]
-  (let [apikey (:telegram-apikey config)
-        bot-info (get-me {:apikey apikey})
-        cfg {:apikey apikey 
-             :bot-name (:username bot-info)}
+  (let [tg-cfg {:apikey (:telegram-apikey config)
+                :telegram-http-proxy (:telegram-http-proxy config)}
+        bot-info (get-me tg-cfg)
+        cfg (assoc tg-cfg :bot-name (:username bot-info))
         poll-opts (assoc cfg :timeout LONG_POLLING_TIMEOUT)]
     (setup-menu-commands cfg)
     (log! ["start poller-loop for:" (select-keys bot-info [:username :id])])

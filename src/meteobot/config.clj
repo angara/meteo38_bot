@@ -7,6 +7,7 @@
    [malli.error :as me]
    [mount.core :refer [defstate args]]
    [mlib.envvar :refer [env-str env-int]]
+   [mlib.telegram.botapi :as botapi]
    ,))
 
 
@@ -15,24 +16,27 @@
 
 
 (defn env-config []
-  {:telegram-apikey   (env-str "TELEGRAM_APIKEY")
-   :database-url      (env-str "DATABASE_URL")
-   :meteo-api-url     (env-str "METEO_API_URL", "https://angara.net/meteo/api")
-   :meteo-api-auth    (env-str "METEO_API_AUTH")
-   :meteo-api-timeout (env-int "METEO_API_TIMEOUT" 5000) ;; ms
-   ;
-   :metrics-bind      (env-str "METRICS_BIND" "localhost")
-   :metrics-port      (env-int "METRICS_PORT" 7937)
-   ;
-   :timezone (jt/zone-id (env-str "TIMEZONE" "Asia/Irkutsk"))
+  (let [telegram-http-proxy (env-str "TELEGRAM_HTTP_PROXY")]
+    (cond->
+     {:telegram-apikey   (env-str "TELEGRAM_APIKEY")
+      :database-url      (env-str "DATABASE_URL")
+      :meteo-api-url     (env-str "METEO_API_URL", "https://angara.net/meteo/api")
+      :meteo-api-auth    (env-str "METEO_API_AUTH")
+      :meteo-api-timeout (env-int "METEO_API_TIMEOUT" 5000) ;; ms
+      ;
+      :metrics-bind      (env-str "METRICS_BIND" "localhost")
+      :metrics-port      (env-int "METRICS_PORT" 7937)
+      ;
+      :timezone (jt/zone-id (env-str "TIMEZONE" "Asia/Irkutsk"))
 
-   ;
+      ;
 ;;    :meteo-http-host    (env-str "METEO_HTTP_HOST" "localhost")
 ;;    :meteo-http-port    (env-int "METEO_HTTP_PORT" 8004)
-   ;
-   ; :redis-url           (env-str "REDIS_URL")                 ;; "redis://user:password@localhost:6379/"
-   ;
-   :build-info (build-info)})
+      ;
+      ; :redis-url           (env-str "REDIS_URL")                 ;; "redis://user:password@localhost:6379/"
+      ;
+      :build-info (build-info)}
+      telegram-http-proxy (assoc :telegram-http-proxy telegram-http-proxy))))
 
 
 (def not-blank
@@ -42,6 +46,15 @@
   (m/schema [:and :int [:> 0]]))
 
 
+(def telegram-http-proxy
+  (m/schema
+   [:and
+    not-blank
+    [:fn
+     {:error/message "must be an absolute http://host:port URI"}
+     botapi/valid-telegram-http-proxy?]]))
+
+
 (def config-schema
   [:map 
    [:telegram-apikey not-blank]
@@ -49,6 +62,7 @@
    [:meteo-api-url   not-blank]
    [:meteo-api-auth  not-blank]
    [:meteo-api-timeout [:and :int [:> 100]]]
+   [:telegram-http-proxy {:optional true} telegram-http-proxy]
    ])
 
 
@@ -68,4 +82,3 @@
 
 (defstate config 
   :start (args))
-

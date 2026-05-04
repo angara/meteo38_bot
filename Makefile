@@ -2,7 +2,7 @@
 
 APP_NAME   = meteo38_bot
 VER_MAJOR  = 2
-VER_MINOR  = 0
+VER_MINOR  = 1
 MAIN_CLASS = meteobot.main
 
 JAR_NAME = meteo38_bot.jar
