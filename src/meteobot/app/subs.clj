@@ -5,7 +5,7 @@
    [taoensso.telemere :refer [log!]]
    [mlib.telegram.botapi :as botapi]
    [meteobot.data.store :as store]
-   [meteobot.app.fmt :refer [next-seq]]
+   [meteobot.app.fmt :as fmt :refer [next-seq]]
    ,))
 
 
@@ -93,15 +93,19 @@
                                   "⏰ " hhmm  (if wds (str " - " wds "\n") "  ")
                                   "️✏️ " "/sub_" (:subs_id sb)
                                   "\n")))))]
-      (botapi/send-html cfg chat-id (str/join "\n" txts))
+      (botapi/send-message cfg chat-id
+                           {:text (str/join "\n" txts)
+                            :parse_mode "HTML"
+                            :reply_markup fmt/main-buttons})
       ,)
-    (botapi/send-html cfg chat-id 
-                      (str "🔸 Чтобы настроить рассылку\n\n"
-                           "- зайдите в список станций /active или /near\n"
-                           "- перейдите на информацию о станции по ссылке 'ℹ️ info_'\n"
-                           "- добавьте рассылку кнопкой ⏰\n"
-                           "- установите время и дни недели"
-                           ))
+    (botapi/send-message cfg chat-id
+                         {:text (str "🔸 Чтобы настроить рассылку\n\n"
+                                     "- зайдите в список станций /active или /near\n"
+                                     "- перейдите на информацию о станции по ссылке 'ℹ️ info_'\n"
+                                     "- добавьте рассылку кнопкой ⏰\n"
+                                     "- установите время и дни недели")
+                          :parse_mode "HTML"
+                          :reply_markup fmt/main-buttons})
     ,))
 
 

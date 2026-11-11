@@ -105,6 +105,31 @@
 
 ; - - - - - - - - - -
 
+;; Only the latest search per chat is retained, for ten minutes. Callback
+;; payloads contain a token, never the query (Telegram limits them to 64 bytes).
+(def search-results*
+  (cache/ttl-cache-factory {} :ttl (* 10 60 1000)))
+
+(defn save-search [chat-id query stations]
+  (let [token (str (random-uuid))]
+    (cache/miss search-results* chat-id
+                {:token token :query query :stations (vec stations)})
+    token))
+
+(defn get-search [chat-id token]
+  (let [result (cache/lookup search-results* chat-id)]
+    (when (= token (:token result))
+      result)))
+
+
+(defn search-active-stations [query lat lon hours]
+  (let [query (str/lower-case (str/trim query))]
+    (filterv (fn [{:keys [title descr]}]
+               (or (str/includes? (str/lower-case (or title "")) query)
+                   (str/includes? (str/lower-case (or descr "")) query)))
+             (active-stations lat lon hours))))
+
+
 (defn user-subs [user-id]
   (sql/user-subs pg/dbc {:user-id user-id}))
 

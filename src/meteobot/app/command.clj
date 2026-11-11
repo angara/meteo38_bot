@@ -4,6 +4,7 @@
    [taoensso.telemere :refer [log!]]
    [mlib.telegram.botapi :as botapi]
    [meteobot.data.store :as store]
+   [meteobot.config :as config]
    [meteobot.app.fmt :as fmt] 
    [meteobot.app.subs :as subs]
    ,))
@@ -32,6 +33,7 @@
    " и возможность настроить рассылку уведомлений в указанное время по данным сайта.\n\n"
    "🔸 По кнопке '<b>⭐ Избранное</b>' выводятся последние данные с выбранных метеостанций.\n\n"
    "🔸 Кнопка '<b>🌍 Рядом</b>' использует функцию геолокации для поиска ближайших станций.\n\n"
+   "🔸 Введите не менее трёх символов для поиска активных станций по названию и описанию.\n\n"
    "🔸 Из '<b>Меню</b>' можно воспользоваться остальными командами и управлять рассылками.\n\n"
    "📩 Пожелания по работе бота пишите в группу - @meteo38\n"
    ,))
@@ -105,11 +107,13 @@
 
 
 (defn cmd-help [cfg {{chat-id :id} :chat} _]
-  (botapi/send-message cfg chat-id
-                       {:text HELP_TEXT
-                        :parse_mode "HTML"
-                        :reply_markup fmt/main-buttons
-                        }))
+  (let [{:keys [appname version commit]} (config/build-info)]
+    (botapi/send-message cfg chat-id
+                         {:text (str (str/trimr HELP_TEXT) "\n\n<code>- "
+                                     (botapi/hesc (str appname " " version " " commit))
+                                     "</code>")
+                          :parse_mode "HTML"
+                          :reply_markup fmt/main-buttons})))
 
 
 ; - - - - - - - - - -
@@ -241,8 +245,8 @@
 ; - - - - - - - - - -
 
 (defn cmd-favs [cfg {{chat-id :id} :chat :as msg} opts]
-  (if-let [fvs (seq (store/user-favs chat-id))]
-    (doseq [st fvs]
+  (if-let [favs (seq (store/user-favs chat-id))]
+    (doseq [st favs]
       (stinfo cfg msg (assoc opts :param st)))
     (botapi/send-html cfg chat-id EMPTY_FAVS)))
 
@@ -289,17 +293,74 @@
   (when-let [[cmd param] (parse-command text)]
     (when-let [hc (get command-map cmd)]
       (hc cfg msg {:param param})
-      true
-      )))
+      true)))
 
+
+(def search-empty-keyboard
+  {:inline_keyboard [[{:text "Активные станции" :callback_data "search_active"}
+                      {:text "Помощь" :callback_data "search_help"}]]})
+
+(defn- search-page-message [chat-id token {:keys [query stations]} page-num]
+  (let [page-count (max 1 (long (Math/ceil (/ (count stations) (double ACTIVE_PAGE_SIZE)))))
+        page-num (max 0 (min page-num (dec page-count)))
+        page (take ACTIVE_PAGE_SIZE (drop (* page-num ACTIVE_PAGE_SIZE) stations))
+        favs (set (store/user-favs chat-id))
+        keyboard (prev-next-keyboard (str "search:" token)
+                                    (when (pos? page-num) (dec page-num))
+                                    (when (< page-num (dec page-count)) (inc page-num)))]
+    {:text (str "🔎 Поиск: <b>" (botapi/hesc query) "</b>\n"
+                "Найдено: " (count stations) ", страница " (inc page-num) "/" page-count "\n\n"
+                (str/join "\n" (map fmt/active-list-item (set-fav-flag page favs))))
+     :parse_mode "HTML"
+     :link_preview_options {:is_disabled true}
+     :reply_markup (if (> page-count 1) keyboard fmt/main-buttons)}))
+
+(defn search-stations [cfg {{chat-id :id} :chat} query]
+  (let [location (or (store/get-user-location chat-id) DEFAULT_LOCATION)
+        stations (store/search-active-stations query (:latitude location) (:longitude location) ACTIVE_HOURS)]
+    (if (seq stations)
+      (let [token (store/save-search chat-id query stations)]
+        (botapi/send-message cfg chat-id
+                             (search-page-message chat-id token {:query query :stations stations} 0)))
+      (botapi/send-message cfg chat-id
+                           {:text (str "По запросу «" (botapi/hesc query) "» активных станций не найдено.")
+                            :parse_mode "HTML"
+                            :reply_markup search-empty-keyboard}))))
+
+(defn cb-search [cfg {{{chat-id :id} :chat msg-id :message_id} :message cbk-id :id}
+                 [_ token page-num]]
+  (if-let [result (store/get-search chat-id token)]
+    (if-let [page (when page-num (parse-long page-num))]
+      (do
+        (botapi/edit-message cfg chat-id msg-id (search-page-message chat-id token result page))
+        (botapi/answer-callback-text cfg cbk-id ""))
+      (botapi/answer-callback-text cfg cbk-id "Некорректная страница."))
+    (botapi/answer-callback-text cfg cbk-id "Поиск устарел. Введите запрос ещё раз.")))
+
+(defn cb-search-active [cfg {msg :message cbk-id :id} _]
+  (botapi/answer-callback-text cfg cbk-id "")
+  (cmd-active cfg msg nil))
+
+(defn cb-search-help [cfg {msg :message cbk-id :id} _]
+  (botapi/answer-callback-text cfg cbk-id "")
+  (cmd-help cfg msg nil))
 
 (defn route-text [cfg msg text]
-  (condp = text
-    fmt/BTN_FAVS_TEXT 
+  (cond
+    (= text fmt/BTN_FAVS_TEXT)
+    (do (favs-brief cfg msg) true)
+
+    (and (string? text)
+         (not (re-find #"^[/!]" (str/trim text))))
     (do
-      (favs-brief cfg msg)
+      (if (>= (count (str/trim text)) 3)
+        (search-stations cfg msg (str/trim text))
+        (botapi/send-message cfg (get-in msg [:chat :id])
+                             {:text "Для поиска введите не менее 3 символов."
+                              :reply_markup fmt/main-buttons}))
       true)
-    nil))
+
+    :else nil))
 
 
 (defn route-location [cfg msg location]
@@ -313,6 +374,9 @@
   {
    "near_next" cb-near-next
    "active"    cb-active
+   "search"    cb-search
+   "search_active" cb-search-active
+   "search_help" cb-search-help
    "fav"       cb-fav
    "subs_new"  subs/cb-subs-new
    "subs"      subs/cb-subs

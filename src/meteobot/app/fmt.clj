@@ -254,7 +254,7 @@
 
 (def digest-limit 4000)
 
-(def st-indent "\u2003 ") ;; em space + space
+(def st-indent "\u2003\u2003 ") ;; two em spaces + space
 
 (defn- visible-length
   "Message length as Telegram counts it: text after entity parsing."

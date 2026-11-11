@@ -52,7 +52,8 @@
         (is (str/includes? text "<b>Николов Посад</b>")))
       (testing "blank line between stations"
         (is (str/includes? text "</a>\n\n🔹")))
-      (testing "values indented with em space + space"
+      (testing "values indented with two em spaces + one space"
+        (is (= "\u2003\u2003 " fmt/st-indent))
         (is (str/includes? text (str "\">" fmt/st-indent "<b>-12.4 ↑</b>"))))
       (testing "each station links to its page"
         (is (str/includes? text "https://angara.net/meteo/st/irk"))
