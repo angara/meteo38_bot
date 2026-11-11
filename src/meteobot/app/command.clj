@@ -263,12 +263,11 @@
 
 (defn favs-brief [cfg {{chat-id :id} :chat}]
   (if-let [st-list (seq (store/user-favs chat-id))]
-    (doseq [st st-list]
-      (when-let [st-data (store/station-info st)]
-        (botapi/send-message cfg chat-id (fmt/st-brief st-data)))
-      ,)
-    (botapi/send-html cfg chat-id EMPTY_FAVS)
-    ))
+    (let [st-datas (keep #(store/station-info %) st-list)]
+      ;; one digest message instead of a message per favorite station
+      (doseq [msg (fmt/st-digest st-datas {:context :favs})]
+        (botapi/send-message cfg chat-id msg)))
+    (botapi/send-html cfg chat-id EMPTY_FAVS)))
 
 
 ; - - - - - - - - - -

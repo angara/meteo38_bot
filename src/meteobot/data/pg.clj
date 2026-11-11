@@ -2,7 +2,6 @@
   (:require
    [mount.core :refer [defstate args]]
    [pg.core :as pg]
-   [pg.pool :as pool]
    ,))
 
 
@@ -18,5 +17,5 @@
 
 
 (defstate dbc
-  :start (pool/pool {:connection-uri (:database-url (args))})
-  :stop (.close ^java.lang.AutoCloseable dbc))
+  :start (pg/pool {:connection-uri (:database-url (args))})
+  :stop (pg/close dbc))

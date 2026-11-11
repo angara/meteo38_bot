@@ -245,6 +245,72 @@
      }))
 
 
+;; Single digest message for multiple stations (subs broadcast, favorites).
+;; Design validated in proto/one-message-digest.html (branch proto/digest):
+;; blank line between stations; values indented with em space + space
+;; (plain leading spaces are stripped by clients); 4000 visible chars
+;; per message (~4% margin under Telegram's 4096 hard limit); header line
+;; on a single message; favorites first.
+
+(def digest-limit 4000)
+
+(def st-indent "\u2003 ") ;; em space + space
+
+(defn- visible-length
+  "Message length as Telegram counts it: text after entity parsing."
+  [html-text]
+  (-> html-text
+      (str/replace #"<[^>]+>" "")
+      (str/replace #"&lt;|&gt;|&amp;|&quot;" "x")
+      (count)))
+
+(defn- now-dt []
+  (-> (jt/instant)
+      (jt/zoned-date-time (:timezone config))
+      (jt/local-date-time)))
+
+(defn- digest-line
+  "One station entry of a digest: header line + indented values line."
+  [{:keys [st title last last_ts is_fav]}]
+  (let [[v_t v_p v_w] (last-t-p-w last)
+        vals (->> [v_t v_p v_w] (remove nil?) (str/join ", "))
+        head (str (if is_fav "⭐" "🔹") " <b>" (hesc title) "</b>"
+                  (when last_ts (str "  <i>'" (last-dt (ts->dt last_ts)) "</i>")))
+        body (str "<a href=\"" (meteo-st-link st) "\">"
+                  (if (seq vals)
+                    (str st-indent vals)
+                    "⚠️ нет актуальных данных")
+                  "</a>")]
+    {:html (str head "\n" body)}))
+
+(defn- split-chunks
+  "Split digest lines into chunks of total visible length <= limit."
+  [lines limit]
+  (loop [lines lines cur [] cur-len (long 0) acc []]
+    (if-let [l (first lines)]
+      (let [len (long (+ (visible-length (:html l)) 2))] ;; +2: blank line between stations
+        (if (and (seq cur) (> (+ cur-len len) limit))
+          (recur (rest lines) [l] len (conj acc cur))
+          (recur (rest lines) (conj cur l) (+ cur-len len) acc)))
+      (->> (conj acc cur) (filter seq)))))
+
+(defn st-digest
+  "Combined digest message(s) for a list of station infos.
+  Returns a vector of sendMessage param maps (empty for empty input)."
+  ([st-list] (st-digest st-list {:context :subs}))
+  ([st-list {:keys [context] :or {context :subs}}]
+   (let [ordered (sort-by (complement :is_fav) st-list) ;; favorites first (stable)
+         chunks (split-chunks (map digest-line ordered) digest-limit)
+         header (str (if (= context :favs) "⭐ Избранное" "📮 Погода")
+                     " <i>" (last-dt (now-dt)) "</i>")]
+     (mapv (fn [chunk]
+             {:parse_mode "HTML"
+              :text (str (when (= 1 (count chunks)) (str header "\n\n"))
+                         (str/join "\n\n" (map :html chunk)))
+              :link_preview_options {:is_disabled true}})
+           chunks))))
+
+
 ;; station-info
   ;;=> {:closed_at nil,
   ;;    :publ true,

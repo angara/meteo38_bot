@@ -21,15 +21,21 @@
         wdc  (-> dt (jt/day-of-week) (.getValue) (str))]
     (when-let [subs (seq (store/subs-hhmm hhmm wdc))]
       (log! ["process subs:" hhmm wdc (count subs)])
-      (doseq [{:keys [user_id st] :as sb} subs]
+      ;; one digest message per user instead of a message per station
+      (doseq [[user-id user-subs] (group-by :user_id subs)]
         (try
-          (inc-metric :meteobot/send-subs {:station st})
-          (if-let [st-data (store/station-info st)]
-            (do (botapi/send-message cfg user_id (fmt/st-brief st-data))
-                (log! ["process.sub sent:" st user_id]))
-            (log! :warn ["process.sub missing st-info:" st]))
+          (let [st-datas (map (fn [sb]
+                                (inc-metric :meteobot/send-subs {:station (:st sb)})
+                                (store/station-info (:st sb)))
+                              user-subs)
+                missing (count (filter nil? st-datas))]
+            (when (pos? missing)
+              (log! :warn ["process.sub missing st-info:" user-id missing]))
+            (doseq [msg (fmt/st-digest (remove nil? st-datas))]
+              (botapi/send-message cfg user-id msg))
+            (log! ["process.sub sent:" user-id (- (count user-subs) missing)]))
           (catch Exception ex
-            (log! :warn ["process.sub:" sb ex]))))
+            (log! :warn ["process.sub:" user-id ex]))))
       ,)))
 
 
