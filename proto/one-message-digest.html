@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ПРОТОТИП: одна сводка по станциям — meteo38_bot</title>
+<!--
+  PROTOTYPE (throwaway). Отвечает на один вопрос:
+
+  Как выглядит и ведёт себя рассылка метеобота, если вместо отдельного
+  сообщения на каждую станцию собрать ОДНО сообщение-сводку
+  (подписки и избранное)?
+
+  Проверяемые случаи: молчащие станции, избранное вперемешку с подписками,
+  лимит одного сообщения 4000 символов (с запасом до телеграмного 4096) и
+  разбивка на несколько сообщений.
+
+  Модуль DigestModel ниже написан так, чтобы его можно было перенести
+  в meteo38_bot/src/meteobot/app/fmt.clj (Clojure) после валидации.
+
+  ВЕРДИКТ (зафиксирован): пустая строка между станциями; отступ строки
+  данных — два эм-пробела + пробел (\u2003\u2003 ); лимит сообщения 4000 символов;
+  заголовок при одиночном сообщении; избранное — первым.
+-->
+<style>
+  :root {
+    --accent: #2481cc;
+    --bg: #eef2f5;
+    --bubble: #ffffff;
+    --ink: #1c2733;
+    --muted: #6b7a88;
+    --warn: #c0392b;
+    --ok: #2e7d32;
+    --line: #d8e0e6;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px;
+    font: 15px/1.55 system-ui, sans-serif;
+    color: var(--ink); background: var(--bg);
+  }
+  main { max-width: 980px; margin: 0 auto; }
+  h1 { font-size: 21px; margin: 0 0 6px; }
+  h1 .tag { color: var(--warn); font-size: 13px; vertical-align: middle; }
+  .intro { color: var(--muted); margin: 0 0 20px; max-width: 760px; }
+  section {
+    background: var(--bubble); border: 1px solid var(--line);
+    border-radius: 10px; padding: 16px 18px; margin-bottom: 16px;
+  }
+  section > h2 { font-size: 15px; margin: 0 0 10px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th { text-align: left; color: var(--muted); font-weight: 600;
+    padding: 4px 8px; border-bottom: 1px solid var(--line); }
+  td { padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  button {
+    font: inherit; border: 1px solid var(--line); background: #fff;
+    border-radius: 8px; padding: 5px 12px; cursor: pointer; color: var(--ink);
+  }
+  button:hover { border-color: var(--accent); color: var(--accent); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.step { display: block; width: 100%; text-align: left; margin-bottom: 8px; }
+  button.step .n { display: inline-block; width: 20px; color: var(--muted); }
+  button.step.done { border-color: var(--ok); color: var(--muted); }
+  button.step.done .n { color: var(--ok); }
+  .opts label { display: inline-flex; gap: 6px; align-items: center;
+    margin-right: 18px; cursor: pointer; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .tab { border-radius: 999px; padding: 4px 14px; }
+  .tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .scenario { display: flex; gap: 18px; flex-wrap: wrap; }
+  .scenario .desc { flex: 1 1 260px; color: var(--muted); font-size: 14px; }
+  .scenario .steps { flex: 1 1 300px; }
+  .chat { background: #b8c9d8; border-radius: 12px; padding: 18px 14px;
+    display: flex; flex-direction: column; gap: 10px; max-width: 480px; }
+  .bubble {
+    background: var(--bubble); border-radius: 12px 12px 12px 4px;
+    padding: 9px 12px; max-width: 100%; width: fit-content;
+    box-shadow: 0 1px 2px rgba(0,0,0,.15); word-break: break-word;
+  }
+  .bubble a { color: var(--accent); text-decoration: none; }
+  .bubble .lbl { color: var(--muted); font-size: 12px; margin-top: 6px; }
+  .stats { font-size: 14px; margin-top: 10px; }
+  .stats .over { color: var(--warn); font-weight: 600; }
+  details { margin-top: 10px; }
+  pre { background: #f4f7f9; border: 1px solid var(--line); border-radius: 8px;
+    padding: 10px; overflow: auto; font-size: 12px; }
+  .changed { animation: none; outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<main>
+  <h1><span class="tag">ПРОТОТИП·одноразовый</span> Одна сводка по станциям</h1>
+  <p class="intro">
+    Демо отвечает на вопрос: <b>как выглядит и ведёт себя рассылка метеобота, если
+    подписки и избранное собирать в одно сообщение-сводку</b>, а не слать отдельное
+    сообщение на каждую станцию (как сейчас в <code>sender.clj</code> → <code>fmt/st-brief</code>).
+    Нажимайте кнопки и смотрите, как меняется сообщение справа. Особый интерес:
+    станции без свежих данных, лимит сообщения в 4000 символов (запас до 4096) и разбивка.
+  </p>
+
+  <section>
+    <h2>Текущее состояние (станции пользователя)</h2>
+    <div id="statePanel"></div>
+    <p style="margin:10px 0 0">
+      <button id="addStation" class="primary">＋ Добавить станцию</button>
+    </p>
+  </section>
+
+  <section>
+    <h2>Настройки сборки</h2>
+    <div class="opts" id="optsPanel"></div>
+  </section>
+
+  <section>
+    <h2>Сценарии (нажимайте шаги по порядку)</h2>
+    <div class="tabs" id="tabs"></div>
+    <div class="scenario" id="scenarioBody"></div>
+  </section>
+
+  <section>
+    <h2>Результат: сообщение(я) в Telegram</h2>
+    <div class="chat" id="chat"></div>
+    <div class="stats" id="stats"></div>
+    <details>
+      <summary>HTML сообщений (parse_mode=HTML)</summary>
+      <pre id="raw"></pre>
+    </details>
+  </section>
+</main>
+
+<script>
+"use strict";
+/* =====================================================================
+   DigestModel — ЧИСТЫЙ МОДУЛЬ (без DOM). Прототип того, что после
+   валидации переносится в meteo38_bot/src/meteobot/app/fmt.clj.
+   Зеркалит текущие форматы fmt.clj: fresh? (80 мин), format-t,
+   format-p (hPa→мм.рст), format-wind, last-dt (HH:mm / dd.MM.yyyy HH:mm),
+   hesc (экранирование <>&), ссылку angara.net/meteo/st/<id>.
+   ===================================================================== */
+const DigestModel = (() => {
+
+  const LIMIT = 4000;          // символов ПОСЛЕ разбора разметки (запас ~4% до лимита Telegram 4096)
+  const FRESH_MIN = 80;        // минут — как fmt/fresh?
+
+  // fmt/hesc: < > & вне тегов -> именованные сущности
+  function hesc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function stLink(id) { return "https://angara.net/meteo/st/" + id; }
+
+  function float1(x) {
+    return String(Math.round(x * 10) / 10);  // как float1 в fmt.clj (Locale/ROOT, точка)
+  }
+
+  // fmt/last-dt: < 12 часов -> HH:mm, иначе dd.MM.yyyy HH:mm
+  function lastDt(ageMin, now) {
+    const d = new Date(now - ageMin * 60000);
+    const pad = n => String(n).padStart(2, "0");
+    const hm = pad(d.getHours()) + ":" + pad(d.getMinutes());
+    if (ageMin < 12 * 60) return hm;
+    return pad(d.getDate()) + "." + pad(d.getMonth() + 1) + "." + d.getFullYear() + " " + hm;
+  }
+
+  const RHUMB = ["С","СВ","В","ЮВ","Ю","ЮЗ","З","СЗ"];
+  function rhumb(b) {
+    if (b == null || b < 0 || b >= 360) return null;
+    return RHUMB[Math.floor(((b + 22) / 45)) % 8];
+  }
+
+  // fmt/last-t-p-w: значения показываются только «свежими» (< 80 мин)
+  function lastTPW(st, now) {
+    const fresh = st.mode === "ok" && st.ageMin < FRESH_MIN;
+    if (!fresh) return [null, null, null];
+    const d = st.data || {};
+    const t = d.t != null ? "<b>" + float1(d.t) + (d.t_delta > 0.8 ? " ↑" : d.t_delta < -0.8 ? " ↓" : "") + "</b> <i>°C</i>" : null;
+    const p = d.p != null ? "<b>" + Math.round(d.p / 1.3332239) + "</b> <i>мм.рст</i>" : null;
+    const w = d.w != null
+      ? "<b>" + Math.round(d.w) + (d.g != null && Math.round(d.g) !== Math.round(d.w) ? "-" + Math.round(d.g) : "") + "</b> <i>м/с</i>"
+        + (rhumb(d.b) ? " (<b>" + rhumb(d.b) + "</b>)" : "")
+      : null;
+    return [t, p, w];
+  }
+
+  // Варианты отступа строки данных: обычные пробелы Telegram срезает,
+  // поэтому NBSP / эм-пробел / маркер. Ключи = opts.indent.
+  const INDENTS = {
+    emsp: "\u2003\u2003 ",        // ВЫБРАНО: два эм-пробела + пробел
+    nbsp: "\u00A0\u00A0\u00A0",   // 3 неразрывных пробела (&#160;)
+    em:   "\u2003\u2003",         // 2 эм-пробела (&#8195;)
+    em1:  "\u2003",               // 1 эм-пробел
+    space: " ",                   // обычный пробел (контроль: срезается клиентом)
+    marker: "\u21B3 ",            // ↳ маркер-гаттер
+    none: "",
+  };
+
+  // fmt/st-brief для одной станции — строка сводки (без заголовка)
+  function stationLine(st, now, indent) {
+    const [t, p, w] = lastTPW(st, now);
+    const vals = [t, p, w].filter(Boolean).join(", ");
+    const head = (st.fav ? "⭐" : "🔹") + " <b>" + hesc(st.title) + "</b>"
+      + "  <i>'" + lastDt(st.ageMin, now) + "</i>";
+    const body = "<a href=\"" + stLink(st.id) + "\">"
+      + (vals ? (INDENTS[indent] || "") + vals : "⚠️ нет актуальных данных")
+      + "</a>";
+    return { head, body, html: head + "\n" + body };
+  }
+
+  // Длина «после разбора»: теги вырезаются, сущности — 1 символ
+  function visibleLen(html) {
+    return html.replace(/<[^>]+>/g, "").replace(/&lt;|&gt;|&amp;|&quot;/g, "x").length;
+  }
+
+  // Главная функция: набор станций -> сообщение(я)
+  function build(stations, opts, now) {
+    let list = stations.slice();
+    if (opts.favoritesFirst) {
+      list.sort((a, b) => (b.fav ? 1 : 0) - (a.fav ? 1 : 0)); // стабильная сортировка JS сохраняет порядок
+    }
+    const header = opts.header
+      ? (opts.context === "favs" ? "⭐ Избранное" : "📮 Погода")
+        + " <i>" + lastDt(0, now) + "</i>"
+      : "";
+    const lines = list.map(st => stationLine(st, now, opts.indent));
+
+    const messages = [];
+    if (opts.autoSplit) {
+      let cur = [], curLen = header ? visibleLen(header) + 2 : 0; // +2: пустая строка-отступ
+      for (const l of lines) {
+        const len = visibleLen(l.html) + 2;                 // +2: пустая строка между станциями
+        if (cur.length && curLen + len > LIMIT) { messages.push(cur); cur = []; curLen = 0; }
+        cur.push(l.html); curLen += len;
+      }
+      messages.push(cur);
+    } else {
+      messages.push(lines.map(l => l.html));
+    }
+
+    return {
+      messages: messages.map(lines => ({
+        html: (messages.length === 1 && header ? header + "\n\n" : "") + lines.join("\n\n"),
+        headerUsed: messages.length === 1 && !!opts.header,
+        len: 0, // заполним ниже
+      })).map(m => ({ ...m, len: visibleLen(m.html) })),
+      stations: list.length,
+    };
+  }
+
+  return { LIMIT, FRESH_MIN, hesc, stationLine, visibleLen, build };
+})();
+
+
+/* =====================================================================
+  Страница-оболочка: состояние, кнопки, отрисовка. Не для переноса.
+   ===================================================================== */
+
+// Пул станций (названия региона, значения правдоподобные)
+const POOL = [
+  { id: "irk",  title: "Иркутск, Гидромет",   t: -12.4, p: 1013, w: 2, g: 4, b: 315 },
+  { id: "npsd", title: "Николов Посад",       t: -15.8, p: 1015, w: 1, g: null, b: 290 },
+  { id: "lst",  title: "Листвянка",           t: -10.1, p: 1009, w: 6, g: 9, b: 250 },
+  { id: "slyd", title: "Слюдянка",            t: -9.3,  p: 1008, w: 4, g: 7, b: 240 },
+  { id: "bkl",  title: "Байкальск",           t: -8.7,  p: 1007, w: 3, g: null, b: 200 },
+  { id: "shl",  title: "Шелехов",             t: -14.0, p: 1014, w: 1, g: 2, b: 300 },
+  { id: "ang",  title: "Ангарск",             t: -16.5, p: 1016, w: 2, g: null, b: 280 },
+  { id: "usl",  title: "Усолье-Сибирское",    t: -17.2, p: 1017, w: 3, g: 5, b: 270 },
+  { id: "brk",  title: "Братск",              t: -22.8, p: 1021, w: 1, g: null, b: 180 },
+  { id: "tul",  title: "Тулун",               t: -19.4, p: 1019, w: 2, g: 3, b: 200 },
+  { id: "kcg",  title: "Качуг",               t: -27.9, p: 1024, w: 1, g: null, b: 120 },
+  { id: "chm",  title: "Черемхово",           t: -18.1, p: 1018, w: 2, g: null, b: 260 },
+];
+
+let seq = 0;
+function mkStation(p, over) {
+  return Object.assign({
+    id: p.id, title: p.title, fav: false, mode: "ok", ageMin: 14,
+    data: { t: p.t, t_delta: 0.3, p: p.p, w: p.w, g: p.g, b: p.b },
+  }, over || {});
+}
+
+// Состояние демо
+let state = {
+  stations: [],
+  opts: { header: true, favoritesFirst: true, autoSplit: true, context: "subs", indent: "emsp" },
+  poolIdx: 0,
+};
+
+function addStation(over) {
+  const cycle = Math.floor(state.poolIdx / POOL.length);
+  const p = POOL[state.poolIdx % POOL.length];
+  state.poolIdx++;
+  const st = mkStation(p, over);
+  if (cycle > 0) st.title = p.title + " №" + (cycle + 1);  // уникальные названия при циклах пула
+  state.stations.push(st);
+}
+function resetStations(n, over) {
+  state.stations = []; state.poolIdx = 0;
+  for (let i = 0; i < n; i++) addStation(over);
+}
+
+resetStations(3);
+
+// ---- Сценарии ----
+const SCENARIOS = [
+  {
+    name: "Утренняя рассылка",
+    desc: "Обычный случай: пользователь подписан на 3 станции, все живые. " +
+          "Сейчас это 3 сообщения подряд; смотрим, как выглядит одна сводка.",
+    steps: [
+      { label: "Сброс: 3 станции, все с данными", run() { resetStations(3); } },
+      { label: "Прошёл час: данные чуть устарели (14 → 75 мин, ещё свежие)", run() { state.stations.forEach(s => s.ageMin = 75); } },
+    ],
+  },
+  {
+    name: "Станция молчит",
+    desc: "Листвянка перестала отвечать (>80 мин — значения скрываются, как в fmt/fresh?), " +
+          "у Слюдянки данных нет совсем. Смотрим: предупреждение внутри сводки или мусор?",
+    steps: [
+      { label: "Сброс: 3 станции", run() { resetStations(3); } },
+      { label: "Листвянка: данные старше 80 минут", run() { const s = state.stations[1]; s.ageMin = 140; } },
+      { label: "Слюдянка: данных нет вообще", run() { const s = state.stations[2]; s.mode = "none"; s.ageMin = 1440; } },
+    ],
+  },
+  {
+    name: "Избранное + подписки",
+    desc: "Часть станций в избранном (⭐). Проверяем порядок: избранное сверху, " +
+          "и что будет, если сортировку выключить.",
+    steps: [
+      { label: "Сброс: 5 станций", run() { resetStations(5); } },
+      { label: "Две станции — в избранное", run() { state.stations[1].fav = true; state.stations[3].fav = true; } },
+      { label: "Выключить «избранное сверху»", run() { state.opts.favoritesFirst = false; } },
+    ],
+  },
+  {
+    name: "Много станций — лимит",
+    desc: "Открытие прототипа: реальная строка станции ~55 символов, значит 4000 символов " +
+          "вмещает ~70 станций — для живых подписок лимит почти недостижим. Разбивка — " +
+          "страховка. Сценарий: 96 станций (пул циклится), затем выключаем разбивку — " +
+          "смотрим, как выглядит переполнение.",
+    steps: [
+      { label: "Сброс: 96 станций, все с данными", run() { resetStations(96); } },
+      { label: "Выключить авторазбивку (посмотреть переполнение)", run() { state.opts.autoSplit = false; } },
+      { label: "Включить авторазбивку обратно", run() { state.opts.autoSplit = true; } },
+    ],
+  },
+];
+
+let activeTab = 0;
+const doneSteps = new Set();
+
+// ---- Отрисовка ----
+const $ = id => document.getElementById(id);
+
+function renderState() {
+  const tbl = state.stations.map((s, i) => {
+    const modeTxt = s.mode === "ok" ? (s.ageMin < 80 ? "данные " + s.ageMin + " мин назад" : "старше 80 мин → скрыты")
+                 : s.mode === "stale" ? "устаревшие" : "нет данных";
+    return "<tr>" +
+      "<td>" + (s.fav ? "⭐" : "🔹") + "</td>" +
+      "<td><b>" + s.title + "</b><br><small style=\"color:var(--muted)\">" + s.id + " · " + modeTxt + "</small></td>" +
+      "<td style=\"white-space:nowrap\">" +
+        "<button data-act=\"fav\" data-i=\"" + i + "\">" + (s.fav ? "★→☆" : "☆→★") + "</button> " +
+        "<button data-act=\"mode\" data-i=\"" + i + "\">данные ↻</button> " +
+        "<button data-act=\"del\" data-i=\"" + i + "\">✕</button>" +
+      "</td></tr>";
+  }).join("");
+  $("statePanel").innerHTML = state.stations.length
+    ? "<table><tr><th></th><th>Станция</th><th>Действия</th></tr>" + tbl + "</table>"
+    : "<p style=\"color:var(--muted)\">Станций нет — сводка не отправляется.</p>";
+}
+
+function renderOpts() {
+  $("optsPanel").innerHTML =
+    '<label><input type="checkbox" id="oHeader" ' + (state.opts.header ? "checked" : "") + '> Заголовок сводки</label>' +
+    '<label><input type="checkbox" id="oFav" ' + (state.opts.favoritesFirst ? "checked" : "") + '> Избранное сверху</label>' +
+    '<label><input type="checkbox" id="oSplit" ' + (state.opts.autoSplit ? "checked" : "") + '> Разбивать по лимиту 4000</label>' +
+    '<label>Контекст: <select id="oCtx">' +
+      '<option value="subs"' + (state.opts.context === "subs" ? " selected" : "") + '>рассылка 📮</option>' +
+      '<option value="favs"' + (state.opts.context === "favs" ? " selected" : "") + '>избранное ⭐</option>' +
+    '</select></label>' +
+    '<label>Отступ данных: <select id="oIndent">' +
+      '<option value="emsp"' + (state.opts.indent === "emsp" ? " selected" : "") + '>2 эм-пробела + пробел ✓</option>' +
+      '<option value="nbsp"' + (state.opts.indent === "nbsp" ? " selected" : "") + '>3 NBSP</option>' +
+      '<option value="em"' + (state.opts.indent === "em" ? " selected" : "") + '>2 эм-пробела</option>' +
+      '<option value="em1"' + (state.opts.indent === "em1" ? " selected" : "") + '>1 эм-пробел</option>' +
+      '<option value="space"' + (state.opts.indent === "space" ? " selected" : "") + '>просто пробел</option>' +
+      '<option value="marker"' + (state.opts.indent === "marker" ? " selected" : "") + '>↳ маркер</option>' +
+      '<option value="none"' + (state.opts.indent === "none" ? " selected" : "") + '>без отступа</option>' +
+    '</select></label>';
+  $("oHeader").onchange = e => { state.opts.header = e.target.checked; render(); };
+  $("oFav").onchange = e => { state.opts.favoritesFirst = e.target.checked; render(); };
+  $("oSplit").onchange = e => { state.opts.autoSplit = e.target.checked; render(); };
+  $("oCtx").onchange = e => { state.opts.context = e.target.value; render(); };
+  $("oIndent").onchange = e => { state.opts.indent = e.target.value; render(); };
+}
+
+function renderTabs() {
+  $("tabs").innerHTML = SCENARIOS.map((s, i) =>
+    "<button class=\"tab" + (i === activeTab ? " active" : "") + "\" data-tab=\"" + i + "\">" + s.name + "</button>"
+  ).join("");
+  document.querySelectorAll(".tab").forEach(b => b.onclick = () => {
+    activeTab = +b.dataset.tab; doneSteps.clear(); render();
+  });
+  const sc = SCENARIOS[activeTab];
+  $("scenarioBody").innerHTML =
+    "<div class=\"desc\"><b>" + sc.name + ".</b> " + sc.desc + "</div>" +
+    "<div class=\"steps\">" + sc.steps.map((st, i) => {
+      const key = activeTab + ":" + i;
+      return "<button class=\"step" + (doneSteps.has(key) ? " done" : "") + "\" data-step=\"" + i + "\">" +
+        "<span class=\"n\">" + (doneSteps.has(key) ? "✓" : i + 1) + ".</span> " + st.label + "</button>";
+    }).join("") + "</div>";
+  document.querySelectorAll(".step").forEach(b => b.onclick = () => {
+    const i = +b.dataset.step;
+    SCENARIOS[activeTab].steps[i].run();
+    doneSteps.add(activeTab + ":" + i);
+    render();
+  });
+}
+
+function renderPreview() {
+  const now = Date.now();
+  const res = DigestModel.build(state.stations, state.opts, now);
+  $("chat").innerHTML = res.messages.length === 0
+    ? "<div class=\"bubble\" style=\"color:var(--muted)\">(нет станций — ничего не отправляем)</div>"
+    : res.messages.map((m, i) =>
+      "<div class=\"bubble\">" + m.html.replace(/\n/g, "<br>") +
+      (res.messages.length > 1 ? "<div class=\"lbl\">сообщение " + (i + 1) + " из " + res.messages.length + "</div>" : "") +
+      "</div>").join("");
+  $("stats").innerHTML = res.messages.map((m, i) => {
+    const over = m.len > DigestModel.LIMIT;
+    return "Сообщение " + (i + 1) + ": <b class=\"" + (over ? "over" : "") + "\">" + m.len +
+      " симв.</b> (лимит " + DigestModel.LIMIT + (over ? " — ПРЕВЫШЕН на " + (m.len - DigestModel.LIMIT) : "") + ")";
+  }).join(" · ") + " · станций: " + res.stations;
+  $("raw").textContent = res.messages.map((m, i) =>
+    "=== сообщение " + (i + 1) + " ===\n" + m.html).join("\n\n");
+}
+
+function render() {
+  renderState(); renderOpts(); renderTabs(); renderPreview();
+}
+
+// Свободные действия над станциями
+$("addStation").onclick = () => { addStation(); render(); };
+document.addEventListener("click", e => {
+  const b = e.target.closest("button[data-act]");
+  if (!b) return;
+  const i = +b.dataset.i, s = state.stations[i];
+  if (b.dataset.act === "fav") s.fav = !s.fav;
+  if (b.dataset.act === "del") state.stations.splice(i, 1);
+  if (b.dataset.act === "mode") {
+    // цикл: ok -> старше 80 мин -> нет данных -> ok
+    if (s.mode === "ok" && s.ageMin < 80) { s.ageMin = 200; }
+    else if (s.mode === "ok") { s.mode = "none"; s.ageMin = 1440; }
+    else { s.mode = "ok"; s.ageMin = 14; }
+  }
+  render();
+});
+
+render();
+</script>
+</body>
+</html>

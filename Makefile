@@ -9,7 +9,7 @@ JAR_NAME = meteo38_bot.jar
 UBER_JAR = target/${JAR_NAME}
 
 # # #
-PROD_HOST = angara
+PROD_HOST = meteo
 PROD_PATH = /app/meteo38_bot
 # # #
 

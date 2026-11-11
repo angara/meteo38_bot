@@ -32,7 +32,8 @@
 
 
 (def main-buttons
-  {:is_persistent true
+  {
+   ;; :is_persistent true
    :resize_keyboard true
    :keyboard [[{:text BTN_FAVS_TEXT}
                {:text BTN_NEAR_TEXT
