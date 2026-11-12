@@ -265,11 +265,6 @@
       (str/replace #"&lt;|&gt;|&amp;|&quot;" "x")
       (count)))
 
-(defn- now-dt []
-  (-> (jt/instant)
-      (jt/zoned-date-time (:timezone config))
-      (jt/local-date-time)))
-
 (defn- digest-line
   "One station entry of a digest: header line + indented values line."
   [{:keys [st title last last_ts is_fav]}]
@@ -302,8 +297,7 @@
   ([st-list {:keys [context] :or {context :subs}}]
    (let [ordered (sort-by (complement :is_fav) st-list) ;; favorites first (stable)
          chunks (split-chunks (map digest-line ordered) digest-limit)
-         header (str (if (= context :favs) "⭐ Избранное" "📮 Погода")
-                     " <i>" (last-dt (now-dt)) "</i>")]
+         header (if (= context :favs) "⭐ Избранное" "☀️ Погода")]
      (mapv (fn [chunk]
              {:parse_mode "HTML"
               :text (str (when (= 1 (count chunks)) (str header "\n\n"))

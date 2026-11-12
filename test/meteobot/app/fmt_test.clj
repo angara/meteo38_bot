@@ -46,7 +46,8 @@
     (is (= 1 (count msgs)))
     (let [text (:text (first msgs))]
       (testing "single message gets a header"
-        (is (str/starts-with? text "📮 Погода <i>")))
+        (is (str/starts-with? text "☀️ Погода\n\n"))
+        (is (not (str/includes? text "Погода <i>"))))
       (testing "both stations present, bold titles"
         (is (str/includes? text "<b>Иркутск</b>"))
         (is (str/includes? text "<b>Николов Посад</b>")))
@@ -65,7 +66,8 @@
 (deftest st-digest-favs-context-header
   (let [text (:text (first (fmt/st-digest [(st-data "irk" "Иркутск")]
                                           {:context :favs})))]
-    (is (str/starts-with? text "⭐ Избранное <i>"))))
+    (is (str/starts-with? text "⭐ Избранное\n\n"))
+    (is (not (str/includes? text "Избранное <i>")))))
 
 
 (deftest st-digest-escapes-title
@@ -96,7 +98,7 @@
     (testing "every message within the limit"
       (is (every? #(<= (visible-length (:text %)) fmt/digest-limit) msgs)))
     (testing "no header on split messages (prototype behavior)"
-      (is (every? #(not (str/starts-with? (:text %) "📮")) msgs)))
+      (is (every? #(not (str/starts-with? (:text %) "☀️")) msgs)))
     (testing "all stations delivered"
       (is (= 100 (count (re-seq #"meteo/st/st\d" (str/join (map :text msgs)))))))))
 
